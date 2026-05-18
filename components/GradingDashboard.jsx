@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   groupByBelt,
   beltCounts,
@@ -11,6 +11,13 @@ import {
 import { beltDisplayName } from "@/lib/rank";
 import { formatDate, parseDate } from "@/lib/dates";
 import { exportNamesPdf, exportBothCategoriesPdf } from "@/lib/exportPdf";
+import {
+  clearExcludedKeys,
+  exclusionKey,
+  loadExcludedKeys,
+  saveExcludedKeys,
+  withoutExcluded,
+} from "@/lib/excludedStudents";
 import FileUpload from "@/components/FileUpload";
 import CategoryTabs from "@/components/CategoryTabs";
 import BeltSummary from "@/components/BeltSummary";
@@ -49,6 +56,31 @@ export default function GradingDashboard({
   const [beltFilter, setBeltFilter] = useState("all");
   const [stripeFilters, setStripeFilters] = useState([]);
   const [sortBy, setSortBy] = useState("date");
+  const [excluded, setExcluded] = useState({ adults: [], kids: [] });
+
+  useEffect(() => {
+    setExcluded(loadExcludedKeys());
+  }, []);
+
+  const excludeStudent = useCallback((cat, student) => {
+    const key = exclusionKey(cat, student);
+    setExcluded((prev) => {
+      const list = prev[cat];
+      if (list.includes(key)) return prev;
+      const next = { ...prev, [cat]: [...list, key] };
+      saveExcludedKeys(next);
+      return next;
+    });
+  }, []);
+
+  const restoreExcludedForCategory = useCallback((cat) => {
+    setExcluded((prev) => {
+      if (!prev[cat].length) return prev;
+      const next = { ...prev, [cat]: [] };
+      saveExcludedKeys(next);
+      return next;
+    });
+  }, []);
 
   const category = activeTab;
   const dataset = category === "adults" ? adults : kids;
@@ -85,20 +117,29 @@ export default function GradingDashboard({
     });
   }
 
-  const filteredStudents = useMemo(
-    () => filteredFor(category, dataset.students),
-    [dataset.students, category, search, beltFilter, stripeFilters]
-  );
+  const filteredStudents = useMemo(() => {
+    const filtered = filteredFor(category, dataset.students);
+    return withoutExcluded(filtered, category, excluded[category]);
+  }, [
+    dataset.students,
+    category,
+    search,
+    beltFilter,
+    stripeFilters,
+    excluded,
+  ]);
 
-  const adultsFiltered = useMemo(
-    () => filteredFor("adults", adults.students),
-    [adults.students, search, beltFilter, stripeFilters]
-  );
+  const adultsFiltered = useMemo(() => {
+    const filtered = filteredFor("adults", adults.students);
+    return withoutExcluded(filtered, "adults", excluded.adults);
+  }, [adults.students, search, beltFilter, stripeFilters, excluded.adults]);
 
-  const kidsFiltered = useMemo(
-    () => filteredFor("kids", kids.students),
-    [kids.students, search, beltFilter, stripeFilters]
-  );
+  const kidsFiltered = useMemo(() => {
+    const filtered = filteredFor("kids", kids.students);
+    return withoutExcluded(filtered, "kids", excluded.kids);
+  }, [kids.students, search, beltFilter, stripeFilters, excluded.kids]);
+
+  const hiddenCountForTab = excluded[category].length;
 
   const grouped = useMemo(
     () => groupByBelt(filteredStudents, category, sortBy),
@@ -255,7 +296,11 @@ export default function GradingDashboard({
             <div className="mb-4 flex justify-end">
               <button
                 type="button"
-                onClick={onClearAll}
+                onClick={() => {
+                  clearExcludedKeys();
+                  setExcluded({ adults: [], kids: [] });
+                  onClearAll();
+                }}
                 className="text-sm text-zinc-600 hover:underline"
               >
                 Clear all saved data (this browser)
@@ -279,6 +324,21 @@ export default function GradingDashboard({
                 <BeltSummary beltCounts={summaryCounts} />
               </section>
 
+              {hiddenCountForTab > 0 && (
+                <p className="mb-4 text-sm text-zinc-600">
+                  {hiddenCountForTab} student
+                  {hiddenCountForTab === 1 ? "" : "s"} hidden from this list and
+                  PDF exports.{" "}
+                  <button
+                    type="button"
+                    onClick={() => restoreExcludedForCategory(category)}
+                    className="font-medium text-blue-600 hover:underline"
+                  >
+                    Show all again
+                  </button>
+                </p>
+              )}
+
               <section className="space-y-4">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
                   Students by belt
@@ -289,6 +349,9 @@ export default function GradingDashboard({
                     belt={belt}
                     students={students}
                     defaultOpen={belt !== "unknown"}
+                    onExcludeStudent={(student) =>
+                      excludeStudent(category, student)
+                    }
                   />
                 ))}
                 {grouped.size === 0 && (

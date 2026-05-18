@@ -9,6 +9,7 @@ import {
   clearSavedDataset,
   clearAllSavedData,
 } from "@/lib/storage";
+import { clearExcludedKeys } from "@/lib/excludedStudents";
 import { deserializeDataset } from "@/lib/datasetSerialize";
 import {
   fetchRoster,
@@ -161,6 +162,7 @@ export default function Home() {
     setAdults(empty);
     setKids(empty);
     clearAllSavedData();
+    clearExcludedKeys();
     await syncToCloud(empty, empty);
   }
 

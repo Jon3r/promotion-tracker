@@ -1,6 +1,7 @@
 "use client";
 
 import { formatDate, daysUntil } from "@/lib/dates";
+import ExcludeStudentButton from "./ExcludeStudentButton";
 
 const HIGHLIGHT_DAYS = 14;
 
@@ -9,7 +10,7 @@ function isUpcoming(student) {
   return until != null && until >= 0 && until <= HIGHLIGHT_DAYS;
 }
 
-function StudentCard({ student }) {
+function StudentCard({ student, onExclude }) {
   const highlight = isUpcoming(student);
 
   return (
@@ -18,7 +19,17 @@ function StudentCard({ student }) {
         highlight ? "bg-amber-50/80 ring-1 ring-amber-200" : ""
       }`}
     >
-      <p className="font-medium text-zinc-900">{student.fullName}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 flex-1 font-medium text-zinc-900">
+          {student.fullName}
+        </p>
+        {onExclude && (
+          <ExcludeStudentButton
+            onClick={() => onExclude(student)}
+            label={`Remove ${student.fullName} from list`}
+          />
+        )}
+      </div>
       <dl className="mt-2 grid grid-cols-[minmax(0,auto)_1fr] gap-x-3 gap-y-1.5 text-xs">
         <dt className="text-zinc-500">Current</dt>
         <dd className="min-w-0 text-zinc-800">{student.currentRank || "—"}</dd>
@@ -60,7 +71,7 @@ function StudentCard({ student }) {
   );
 }
 
-export default function StudentTable({ students }) {
+export default function StudentTable({ students, onExcludeStudent }) {
   if (!students.length) {
     return <p className="py-4 text-sm text-zinc-500">No students in this group.</p>;
   }
@@ -72,6 +83,7 @@ export default function StudentTable({ students }) {
           <StudentCard
             key={`${student.fullName}-${student.email}-${student.promotionDate?.toISOString()}`}
             student={student}
+            onExclude={onExcludeStudent}
           />
         ))}
       </ul>
@@ -80,6 +92,7 @@ export default function StudentTable({ students }) {
         <table className="min-w-full divide-y divide-zinc-200 text-left text-sm">
           <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-500">
             <tr>
+              {onExcludeStudent && <th className="w-10 px-2 py-2" aria-label="Remove" />}
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Current</th>
               <th className="px-3 py-2">Next</th>
@@ -99,6 +112,14 @@ export default function StudentTable({ students }) {
                   key={`${student.fullName}-${student.email}-${student.promotionDate?.toISOString()}`}
                   className={highlight ? "bg-amber-50/80" : ""}
                 >
+                  {onExcludeStudent && (
+                    <td className="px-2 py-2 align-middle">
+                      <ExcludeStudentButton
+                        onClick={() => onExcludeStudent(student)}
+                        label={`Remove ${student.fullName} from list`}
+                      />
+                    </td>
+                  )}
                   <td className="whitespace-nowrap px-3 py-2 font-medium text-zinc-900">
                     {student.fullName}
                   </td>

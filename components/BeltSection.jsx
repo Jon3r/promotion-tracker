@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { beltAccentClass, beltDisplayName } from "@/lib/rank";
-import { formatDate } from "@/lib/dates";
-import { nearestPromotionDate } from "@/lib/groupStudents";
 import StudentTable from "./StudentTable";
 
-export default function BeltSection({ belt, students, defaultOpen = true }) {
+export default function BeltSection({
+  belt,
+  students,
+  defaultOpen = true,
+  onExcludeStudent,
+}) {
   const [open, setOpen] = useState(defaultOpen);
-  const nearest = nearestPromotionDate(students);
   const isUnknown = belt === "unknown";
 
   return (
@@ -27,11 +29,6 @@ export default function BeltSection({ belt, students, defaultOpen = true }) {
               ({students.length})
             </span>
           </h3>
-          {nearest && (
-            <p className="mt-0.5 text-sm text-zinc-500">
-              Next grading: {formatDate(nearest)}
-            </p>
-          )}
         </div>
         <span className="shrink-0 text-zinc-400" aria-hidden>
           {open ? "▼" : "▶"}
@@ -39,7 +36,10 @@ export default function BeltSection({ belt, students, defaultOpen = true }) {
       </button>
       {open && (
         <div className="min-w-0 border-t border-zinc-100 px-1 pb-2 sm:px-2">
-          <StudentTable students={students} />
+          <StudentTable
+            students={students}
+            onExcludeStudent={onExcludeStudent}
+          />
         </div>
       )}
     </section>
