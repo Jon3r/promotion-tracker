@@ -5,7 +5,9 @@ import {
   isPostgresConfigured,
 } from "@/lib/rosterDb.server";
 import { verifyUploadSecret } from "@/lib/authSecret.server";
-import { deserializeDataset } from "@/lib/datasetSerialize";
+import { serializeDataset } from "@/lib/datasetSerialize";
+
+const emptyBlob = () => serializeDataset({ students: [] });
 
 export async function GET() {
   if (!isPostgresConfigured()) {
@@ -21,16 +23,16 @@ export async function GET() {
     if (!roster) {
       return NextResponse.json({
         configured: true,
-        adults: deserializeDataset(null),
-        kids: deserializeDataset(null),
+        adults: emptyBlob(),
+        kids: emptyBlob(),
         updatedAt: null,
       });
     }
 
     return NextResponse.json({
       configured: true,
-      adults: roster.adults,
-      kids: roster.kids,
+      adults: roster.adults ?? emptyBlob(),
+      kids: roster.kids ?? emptyBlob(),
       updatedAt: roster.updatedAt,
     });
   } catch (e) {

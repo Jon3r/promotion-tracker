@@ -8,7 +8,11 @@ CREATE TABLE IF NOT EXISTS rosters (
 );
 
 INSERT INTO rosters (slug, adults, kids)
-VALUES ('default', '{}', '{}')
+VALUES (
+  'default',
+  '{"version":1,"fileName":null,"savedAt":null,"students":[]}'::jsonb,
+  '{"version":1,"fileName":null,"savedAt":null,"students":[]}'::jsonb
+)
 ON CONFLICT (slug) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS shares (
