@@ -15,6 +15,8 @@ import {
   fetchRoster,
   saveRosterToCloud,
   mergeDataset,
+  syncRosterFromClubWorx,
+  fetchSyncStatus,
 } from "@/lib/rosterClient";
 import { formatDate, parseDate } from "@/lib/dates";
 import GradingDashboard from "@/components/GradingDashboard";
@@ -49,6 +51,10 @@ export default function Home() {
   const [uploadPassword, setUploadPassword] = useState("");
   const [cloudStatus, setCloudStatus] = useState("loading");
   const [cloudError, setCloudError] = useState("");
+  const [clubworxConfigured, setClubworxConfigured] = useState(false);
+  const [clubworxSyncing, setClubworxSyncing] = useState(false);
+  const [clubworxMessage, setClubworxMessage] = useState("");
+  const [clubworxError, setClubworxError] = useState("");
 
   const syncToCloud = useCallback(
     async (adultsData, kidsData) => {
@@ -99,11 +105,51 @@ export default function Home() {
 
       setAdults(nextAdults);
       setKids(nextKids);
+
+      const syncStatus = await fetchSyncStatus();
+      setClubworxConfigured(Boolean(syncStatus.clubworxConfigured));
+
       setHydrated(true);
     }
 
     load();
   }, []);
+
+  async function handleClubWorxSync() {
+    setClubworxSyncing(true);
+    setClubworxError("");
+    setClubworxMessage("");
+
+    const sync = await syncRosterFromClubWorx({
+      password: uploadPassword || undefined,
+    });
+
+    if (!sync.ok) {
+      setClubworxError(sync.error || "ClubWorx sync failed");
+      setClubworxSyncing(false);
+      return;
+    }
+
+    const remote = await fetchRoster();
+    if (remote.ok && remote.configured) {
+      const nextAdults = normalizeLoaded(deserializeDataset(remote.adults));
+      const nextKids = normalizeLoaded(deserializeDataset(remote.kids));
+      setAdults(nextAdults);
+      setKids(nextKids);
+      saveDataset("adults", nextAdults);
+      saveDataset("kids", nextKids);
+      setCloudStatus("synced");
+      setClubworxMessage(
+        `Synced ${sync.adultsCount} adults and ${sync.kidsCount} kids from ClubWorx.`
+      );
+    } else {
+      setClubworxError(
+        remote.error || "Synced to database but could not reload roster"
+      );
+    }
+
+    setClubworxSyncing(false);
+  }
 
   async function handleUpload(category, file) {
     const setDataset = category === "adults" ? setAdults : setKids;
@@ -189,8 +235,9 @@ export default function Home() {
     <main className="mx-auto min-h-screen w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-4 py-8 sm:px-6">
       <PageHeader title="BJJ grading report">
         <p className="mt-2 max-w-2xl text-zinc-600">
-          Upload spreadsheets to update the gym roster. When the database is
-          connected, every coach sees the latest data on any device.
+          Sync from ClubWorx or upload spreadsheets to update the gym roster.
+          When the database is connected, every coach sees the latest data on
+          any device.
         </p>
         {cloudStatus === "synced" && (
           <p className="mt-2 text-sm text-green-800">
@@ -214,6 +261,44 @@ export default function Home() {
           </p>
         )}
       </PageHeader>
+
+      {clubworxConfigured && (
+        <section className="mb-6 min-w-0 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
+          <h2 className="text-sm font-semibold text-zinc-900">
+            Sync from ClubWorx
+          </h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Pull current belt ranks for all active members into Adults and Kids
+            rosters and save to the cloud database.
+          </p>
+          <button
+            type="button"
+            onClick={handleClubWorxSync}
+            disabled={
+              clubworxSyncing ||
+              cloudStatus === "local-only" ||
+              cloudStatus === "loading"
+            }
+            className="mt-4 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 sm:w-auto"
+          >
+            {clubworxSyncing ? "Syncing from ClubWorx…" : "Sync from ClubWorx"}
+          </button>
+          {cloudStatus === "local-only" && (
+            <p className="mt-2 text-sm text-amber-800">
+              Connect Vercel Postgres before syncing — data is saved to the
+              database, not only this browser.
+            </p>
+          )}
+          {clubworxMessage && (
+            <p className="mt-2 text-sm text-green-800">{clubworxMessage}</p>
+          )}
+          {clubworxError && (
+            <p className="mt-2 text-sm text-red-600" role="alert">
+              {clubworxError}
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="mb-6 min-w-0 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
         <label className="block text-sm">
