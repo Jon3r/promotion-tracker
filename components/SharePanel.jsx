@@ -57,7 +57,7 @@ export default function SharePanel({
   }
 
   return (
-    <section className="mb-8 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <section className="mb-8 min-w-0 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
       <h2 className="text-sm font-semibold text-zinc-900">
         Share with coaches (view only)
       </h2>
@@ -82,7 +82,7 @@ export default function SharePanel({
           type="button"
           onClick={publish}
           disabled={disabled || loading}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+          className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 sm:w-auto"
         >
           {loading ? "Publishing…" : "Create share link"}
         </button>

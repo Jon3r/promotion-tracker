@@ -182,7 +182,7 @@ export default function GradingDashboard({
         </p>
       ) : (
         <>
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-6 flex min-w-0 flex-col gap-4">
             <CategoryTabs
               active={activeTab}
               onChange={setActiveTab}
@@ -190,18 +190,18 @@ export default function GradingDashboard({
               kidsCount={kids.students.length}
             />
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
               <input
                 type="search"
                 placeholder="Search by name, email, rank…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:col-span-2"
               />
               <select
                 value={effectiveBeltFilter}
                 onChange={(e) => setBeltFilter(e.target.value)}
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
                 aria-label="Filter by belt colour"
               >
                 <option value="all">All belt colours</option>
@@ -222,7 +222,7 @@ export default function GradingDashboard({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
                 aria-label="Sort students"
               >
                 <option value="date">Sort by promotion date</option>
@@ -232,7 +232,7 @@ export default function GradingDashboard({
                 type="button"
                 onClick={handleExportCurrentTab}
                 disabled={filteredStudents.length === 0}
-                className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 sm:col-span-2"
               >
                 Export PDF ({category})
               </button>
@@ -243,7 +243,7 @@ export default function GradingDashboard({
                   disabled={
                     adultsFiltered.length === 0 && kidsFiltered.length === 0
                   }
-                  className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+                  className="w-full rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 sm:col-span-2"
                 >
                   Export PDF (both)
                 </button>

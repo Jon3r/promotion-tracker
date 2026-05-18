@@ -12,7 +12,7 @@ export default function FileUpload({
   const inputId = `upload-${label.replace(/\s+/g, "-").toLowerCase()}`;
 
   return (
-    <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-5 shadow-sm">
+    <div className="min-w-0 rounded-xl border border-dashed border-zinc-300 bg-white p-4 shadow-sm sm:p-5">
       <label htmlFor={inputId} className="block cursor-pointer">
         <span className="text-sm font-semibold text-zinc-900">{label}</span>
         <p className="mt-1 text-sm text-zinc-500">{description}</p>

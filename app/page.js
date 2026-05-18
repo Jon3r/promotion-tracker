@@ -177,14 +177,14 @@ export default function Home() {
 
   if (!hydrated) {
     return (
-      <main className="mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-4 py-8 sm:px-6">
         <p className="text-center text-zinc-500">Loading roster…</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl flex-1 px-4 py-8 sm:px-6">
+    <main className="mx-auto min-h-screen w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-4 py-8 sm:px-6">
       <PageHeader title="BJJ grading report">
         <p className="mt-2 max-w-2xl text-zinc-600">
           Upload spreadsheets to update the gym roster. When the database is
@@ -213,7 +213,7 @@ export default function Home() {
         )}
       </PageHeader>
 
-      <section className="mb-6 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+      <section className="mb-6 min-w-0 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
         <label className="block text-sm">
           <span className="font-medium text-zinc-800">
             Upload password (if your admin set one)

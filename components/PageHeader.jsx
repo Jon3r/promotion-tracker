@@ -14,7 +14,7 @@ export default function PageHeader({ title, children, action }) {
             priority
           />
           <div className="min-w-0 pt-1">
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 break-words sm:text-3xl">
               {title}
             </h1>
             {children}

@@ -7,13 +7,13 @@ export default function CategoryTabs({ active, onChange, adultsCount, kidsCount 
   ];
 
   return (
-    <div className="flex gap-1 rounded-lg bg-zinc-100 p-1">
+    <div className="flex w-full min-w-0 gap-1 rounded-lg bg-zinc-100 p-1">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onChange(tab.id)}
-          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+          className={`min-w-0 flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
             active === tab.id
               ? "bg-white text-zinc-900 shadow-sm"
               : "text-zinc-600 hover:text-zinc-900"
