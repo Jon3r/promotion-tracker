@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { createShare, isShareStorageConfigured } from "@/lib/shareStore.server";
+import { createShare, isShareStorageConfigured } from "@/lib/shareDb.server";
 import { serializeDataset } from "@/lib/datasetSerialize";
+import { verifyUploadSecret } from "@/lib/authSecret.server";
 
 export async function POST(request) {
   if (!isShareStorageConfigured()) {
     return NextResponse.json(
       {
         error:
-          "Share storage is not configured. Add Upstash Redis on Vercel, or run locally in development.",
+          "Share storage is not configured. Add Vercel Postgres and run scripts/init-db.sql",
       },
       { status: 503 }
     );
@@ -20,16 +21,11 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const uploadSecret = process.env.SHARE_UPLOAD_SECRET;
-  if (uploadSecret) {
-    const provided =
-      body.password || request.headers.get("x-share-secret");
-    if (provided !== uploadSecret) {
-      return NextResponse.json(
-        { error: "Invalid publish password" },
-        { status: 401 }
-      );
-    }
+  if (!verifyUploadSecret(request, body)) {
+    return NextResponse.json(
+      { error: "Invalid publish password" },
+      { status: 401 }
+    );
   }
 
   const adultsStudents = body.adults?.students;

@@ -2,7 +2,7 @@
 
 A Next.js app for coaches to visualise student promotion data from Excel exports. Upload separate **Adults** and **Kids** spreadsheets; students are grouped by belt colour with upcoming promotion dates highlighted.
 
-Excel is parsed in the browser. **Share links** store a copy on the server (Redis) so other coaches can view without uploading.
+Excel is parsed in the browser. The **live roster** is stored in **Vercel Postgres** so every coach sees the same data on any device.
 
 ## Requirements
 
@@ -20,6 +20,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000), then upload your Adults and/or Kids spreadsheets.
 
+For cloud sync locally, copy `POSTGRES_URL` into `.env.local` (see Vercel Postgres setup below) or use `vercel env pull .env.local`.
+
 ## Scripts
 
 | Command | Description |
@@ -32,58 +34,46 @@ Open [http://localhost:3000](http://localhost:3000), then upload your Adults and
 ## Workflow
 
 1. Export promotion reports from your gym software as Excel.
-2. Upload **Adults spreadsheet** and **Kids spreadsheet** on the home page.
-3. Switch between **Adults** and **Kids** tabs.
-4. Use **Summary by belt** for counts; expand **Students by belt** for full details.
-5. Search by name, email, or rank; sort by promotion date or name.
-6. Rows with a promotion in the next 14 days are highlighted in amber.
-7. **Export PDF** — names only, grouped by belt colour with belt-themed colours (respects active filters).
-8. **Deduplication** — duplicate rows (same email, or same name + phone) are merged on upload, keeping the most recent promotion date.
-9. **Create share link** — publish so others can open a read-only report at `/view/…`.
+2. Upload **Adults** and/or **Kids** on the home page — data **auto-saves to the cloud** when Postgres is connected.
+3. Other coaches open the **same site URL** on any device to see the latest roster.
+4. Switch between **Adults** and **Kids** tabs; filter, search, export PDF.
+5. Optional: **Create share link** for a frozen read-only snapshot at `/view/…`.
 
-Re-upload files whenever your spreadsheets change.
-
-## Share a report with other coaches
-
-1. Upload Adults and/or Kids data on the home page.
-2. Click **Create share link** (optionally enter a publish password if configured).
-3. Copy the link (e.g. `https://your-app.vercel.app/view/abc123…`) and send it to coaches.
-4. They open the link — **view only** (filters + export work; no upload).
-
-### Vercel setup (required for share links in production)
+## Vercel Postgres setup (required for cross-device sync)
 
 1. Deploy to [Vercel](https://vercel.com).
-2. In the Vercel project, add **Upstash Redis** from the [Marketplace](https://vercel.com/marketplace?category=storage&search=redis) (sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`).
-3. Optional: set `SHARE_UPLOAD_SECRET` in Environment Variables so only people with the password can publish links.
+2. Project → **Storage** → **Create database** → **Postgres**.
+3. Connect it to this project (`POSTGRES_URL` is added automatically).
+4. Open the database **Query** tab and run [`scripts/init-db.sql`](scripts/init-db.sql).
+5. Optional: **Settings → Environment Variables** → `ROSTER_UPLOAD_SECRET` (password required to upload/save).
+6. **Redeploy** the project.
 
-**Local development:** share links save to `.data/shares/` without Redis.
+| Variable | Purpose |
+|----------|---------|
+| `POSTGRES_URL` | Pooled connection (app runtime) |
+| `POSTGRES_URL_NON_POOLING` | Migrations / Query tab |
+| `ROSTER_UPLOAD_SECRET` | Optional password for saves and share publish |
 
-Share links expire after **90 days**.
+**Local development without Postgres:** uploads stay in browser localStorage only; share links save to `.data/shares/`.
+
+## Share links (optional snapshots)
+
+1. Upload data (saved to cloud roster).
+2. Click **Create share link** for a point-in-time URL (`/view/abc123…`).
+3. Share links expire after **90 days**.
+
+Coaches do **not** need a share link to see the live roster — only the main site URL.
 
 ## Export PDF reports
 
-- **Export PDF (adults|kids)** — current tab; **names only**, sorted alphabetically within each belt section.
-- **Export PDF (both)** — Adults then Kids (separate sections) when both are loaded.
+- **Export PDF (adults|kids)** — names only, grouped by belt colour with belt-themed colours.
+- **Export PDF (both)** — Adults and Kids in one file.
 
-Each belt uses a coloured header and tinted background (blue, purple, white, kids belts, etc.). Filters (search, belt, stripes) apply to the export.
+Filters (search, belt, stripes) apply to the export.
 
 ## Deduplication
 
-On upload, duplicates are removed when they share the same **email**, or the same **name + phone** if email is empty. The row with the latest **promotion date** is kept. A message shows how many duplicates were removed.
-
-## Saving uploads
-
-After you upload a spreadsheet, the **parsed student data is saved automatically** in your browser’s **local storage** (not on a server). When you return to the app on the same device and browser, your Adults and Kids data reload without uploading again.
-
-- **Update data:** upload a new Excel file for that category — it replaces the saved copy.
-- **Remove one file:** use **Remove** on the upload card.
-- **Remove everything:** use **Clear all saved data** in the header.
-
-Saved data is per browser (Chrome vs Safari, or another computer won’t see it). Clearing site data in your browser will delete it too.
-
-## Local data folder
-
-You can keep `.xlsx` files in a `data/` folder for your own reference. This folder is gitignored — do not commit student PII.
+On upload, duplicates are removed when they share the same **email**, or the same **name + phone** if email is empty. The row with the latest **promotion date** is kept.
 
 ## Deploy
 
@@ -91,4 +81,4 @@ You can keep `.xlsx` files in a `data/` folder for your own reference. This fold
 npm run build
 ```
 
-Deploy the project to [Vercel](https://vercel.com) or any host that supports Next.js.
+Deploy to [Vercel](https://vercel.com). Ensure Postgres is connected and `scripts/init-db.sql` has been run.

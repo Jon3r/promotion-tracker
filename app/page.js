@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { parseExcelFile } from "@/lib/parseExcel";
 import { deduplicateStudents } from "@/lib/deduplicate";
 import {
@@ -9,6 +9,12 @@ import {
   clearSavedDataset,
   clearAllSavedData,
 } from "@/lib/storage";
+import { deserializeDataset } from "@/lib/datasetSerialize";
+import {
+  fetchRoster,
+  saveRosterToCloud,
+  mergeDataset,
+} from "@/lib/rosterClient";
 import { formatDate, parseDate } from "@/lib/dates";
 import GradingDashboard from "@/components/GradingDashboard";
 import SharePanel from "@/components/SharePanel";
@@ -39,17 +45,63 @@ export default function Home() {
   const [adults, setAdults] = useState(emptyDataset);
   const [kids, setKids] = useState(emptyDataset);
   const [hydrated, setHydrated] = useState(false);
+  const [uploadPassword, setUploadPassword] = useState("");
+  const [cloudStatus, setCloudStatus] = useState("loading");
+  const [cloudError, setCloudError] = useState("");
+
+  const syncToCloud = useCallback(
+    async (adultsData, kidsData) => {
+      setCloudError("");
+      const result = await saveRosterToCloud({
+        adults: adultsData,
+        kids: kidsData,
+        password: uploadPassword || undefined,
+      });
+      if (result.ok) {
+        setCloudStatus("synced");
+        return true;
+      }
+      setCloudStatus("error");
+      setCloudError(result.error || "Could not save to cloud");
+      return false;
+    },
+    [uploadPassword]
+  );
 
   useEffect(() => {
-    const loadedAdults = loadDataset("adults");
-    const loadedKids = loadDataset("kids");
-    if (loadedAdults?.students?.length) {
-      setAdults(normalizeLoaded(loadedAdults));
+    async function load() {
+      const localAdults = loadDataset("adults");
+      const localKids = loadDataset("kids");
+
+      let nextAdults = localAdults?.students?.length
+        ? normalizeLoaded(localAdults)
+        : emptyDataset();
+      let nextKids = localKids?.students?.length
+        ? normalizeLoaded(localKids)
+        : emptyDataset();
+
+      const remote = await fetchRoster();
+      if (remote.ok && remote.configured) {
+        const remoteAdults = normalizeLoaded(deserializeDataset(remote.adults));
+        const remoteKids = normalizeLoaded(deserializeDataset(remote.kids));
+        nextAdults = mergeDataset(nextAdults, remoteAdults);
+        nextKids = mergeDataset(nextKids, remoteKids);
+        setCloudStatus("synced");
+      } else if (remote.ok && !remote.configured) {
+        setCloudStatus("local-only");
+      } else if (!remote.ok && remote.configured === false) {
+        setCloudStatus("local-only");
+      } else {
+        setCloudStatus("local-only");
+        if (remote.error) setCloudError(remote.error);
+      }
+
+      setAdults(nextAdults);
+      setKids(nextKids);
+      setHydrated(true);
     }
-    if (loadedKids?.students?.length) {
-      setKids(normalizeLoaded(loadedKids));
-    }
-    setHydrated(true);
+
+    load();
   }, []);
 
   async function handleUpload(category, file) {
@@ -74,6 +126,7 @@ export default function Home() {
       clearSavedDataset(category);
       return;
     }
+
     const dataset = {
       students,
       fileName: file.name,
@@ -81,20 +134,34 @@ export default function Home() {
       savedAt: new Date().toISOString(),
       duplicatesRemoved,
     };
-    setDataset(dataset);
+
+    const nextAdults = category === "adults" ? dataset : adults;
+    const nextKids = category === "kids" ? dataset : kids;
+
+    setAdults(category === "adults" ? dataset : adults);
+    setKids(category === "kids" ? dataset : kids);
     saveDataset(category, dataset);
+
+    await syncToCloud(nextAdults, nextKids);
   }
 
-  function clearDataset(category) {
+  async function clearDataset(category) {
     const setDataset = category === "adults" ? setAdults : setKids;
-    setDataset(emptyDataset());
+    const empty = emptyDataset();
+    setDataset(empty);
     clearSavedDataset(category);
+
+    const nextAdults = category === "adults" ? empty : adults;
+    const nextKids = category === "kids" ? empty : kids;
+    await syncToCloud(nextAdults, nextKids);
   }
 
-  function clearAllData() {
-    setAdults(emptyDataset());
-    setKids(emptyDataset());
+  async function clearAllData() {
+    const empty = emptyDataset();
+    setAdults(empty);
+    setKids(empty);
     clearAllSavedData();
+    await syncToCloud(empty, empty);
   }
 
   const hasAnyData = adults.students.length > 0 || kids.students.length > 0;
@@ -111,7 +178,7 @@ export default function Home() {
   if (!hydrated) {
     return (
       <main className="mx-auto max-w-6xl flex-1 px-4 py-8 sm:px-6">
-        <p className="text-center text-zinc-500">Loading saved data…</p>
+        <p className="text-center text-zinc-500">Loading roster…</p>
       </main>
     );
   }
@@ -120,22 +187,58 @@ export default function Home() {
     <main className="mx-auto min-h-screen max-w-6xl flex-1 px-4 py-8 sm:px-6">
       <PageHeader title="BJJ grading report">
         <p className="mt-2 max-w-2xl text-zinc-600">
-          Upload spreadsheets, filter the roster, export results, and publish a
-          view-only link for other coaches. Data in this browser is also saved
-          locally until you clear it.
+          Upload spreadsheets to update the gym roster. When the database is
+          connected, every coach sees the latest data on any device.
         </p>
+        {cloudStatus === "synced" && (
+          <p className="mt-2 text-sm text-green-800">
+            Roster saved to the cloud — all coaches see the latest data.
+          </p>
+        )}
+        {cloudStatus === "local-only" && (
+          <p className="mt-2 text-sm text-amber-800">
+            Cloud database not configured — data is only on this browser. Add
+            Vercel Postgres and run scripts/init-db.sql to sync across devices.
+          </p>
+        )}
+        {cloudStatus === "error" && cloudError && (
+          <p className="mt-2 text-sm text-red-600" role="alert">
+            {cloudError}
+          </p>
+        )}
         {lastSavedLabel && (
           <p className="mt-2 text-sm text-zinc-500">
-            Last saved in this browser: {lastSavedLabel}
+            Last updated: {lastSavedLabel}
           </p>
         )}
       </PageHeader>
+
+      <section className="mb-6 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+        <label className="block text-sm">
+          <span className="font-medium text-zinc-800">
+            Upload password (if your admin set one)
+          </span>
+          <span className="mt-0.5 block text-zinc-500">
+            Required to save uploads to the cloud when configured.
+          </span>
+          <input
+            type="password"
+            value={uploadPassword}
+            onChange={(e) => setUploadPassword(e.target.value)}
+            placeholder="Optional"
+            className="mt-2 w-full max-w-sm rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            autoComplete="off"
+          />
+        </label>
+      </section>
 
       {hasAnyData && (
         <SharePanel
           adults={adults}
           kids={kids}
           disabled={!hasAnyData}
+          password={uploadPassword}
+          onPasswordChange={setUploadPassword}
         />
       )}
 

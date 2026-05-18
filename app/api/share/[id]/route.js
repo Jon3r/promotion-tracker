@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getShare } from "@/lib/shareStore.server";
+import { getShare } from "@/lib/shareDb.server";
 
 export async function GET(_request, { params }) {
   const { id } = await params;

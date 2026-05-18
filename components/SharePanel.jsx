@@ -3,8 +3,16 @@
 import { useState } from "react";
 import { serializeDataset } from "@/lib/datasetSerialize";
 
-export default function SharePanel({ adults, kids, disabled }) {
-  const [password, setPassword] = useState("");
+export default function SharePanel({
+  adults,
+  kids,
+  disabled,
+  password: passwordProp,
+  onPasswordChange,
+}) {
+  const [passwordLocal, setPasswordLocal] = useState("");
+  const password = passwordProp ?? passwordLocal;
+  const setPassword = onPasswordChange ?? setPasswordLocal;
   const [shareUrl, setShareUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

@@ -1,0 +1,22 @@
+-- Run once in Vercel Postgres Query tab (or: psql $POSTGRES_URL_NON_POOLING -f scripts/init-db.sql)
+
+CREATE TABLE IF NOT EXISTS rosters (
+  slug TEXT PRIMARY KEY,
+  adults JSONB NOT NULL DEFAULT '{}',
+  kids JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO rosters (slug, adults, kids)
+VALUES ('default', '{}', '{}')
+ON CONFLICT (slug) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS shares (
+  id TEXT PRIMARY KEY,
+  adults JSONB NOT NULL,
+  kids JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS shares_expires_at_idx ON shares (expires_at);
