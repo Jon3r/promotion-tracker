@@ -34,6 +34,8 @@ import StripeFilter from "@/components/StripeFilter";
  * @param {() => void} [props.onClearAdults]
  * @param {() => void} [props.onClearKids]
  * @param {() => void} [props.onClearAll]
+ * @param {'clubworx'|'upload'} [props.dataSource]
+ * @param {string} [props.emptyMessage]
  * @param {string} [props.viewLabel]
  * @param {string|null} [props.adultsUploadInfo]
  * @param {string|null} [props.kidsUploadInfo]
@@ -42,6 +44,8 @@ export default function GradingDashboard({
   readOnly = false,
   adults,
   kids,
+  dataSource = "upload",
+  emptyMessage,
   adultsUploadInfo,
   kidsUploadInfo,
   onAdultsUpload,
@@ -184,7 +188,7 @@ export default function GradingDashboard({
         </p>
       )}
 
-      {!readOnly && (
+      {!readOnly && dataSource === "upload" && onAdultsUpload && onKidsUpload && (
         <section className="mb-8 grid gap-4 sm:grid-cols-2">
           <FileUpload
             label="Adults spreadsheet"
@@ -217,9 +221,12 @@ export default function GradingDashboard({
 
       {!hasAnyData ? (
         <p className="rounded-lg bg-zinc-50 px-4 py-8 text-center text-zinc-500">
-          {readOnly
-            ? "This shared report has no data."
-            : "Upload at least one spreadsheet to view the grading report."}
+          {emptyMessage ||
+            (readOnly
+              ? "This shared report has no data."
+              : dataSource === "clubworx"
+                ? "No ClubWorx data loaded yet. Sync from ClubWorx to view the grading report."
+                : "Upload at least one spreadsheet to view the grading report.")}
         </p>
       ) : (
         <>
@@ -292,7 +299,7 @@ export default function GradingDashboard({
             </div>
           </div>
 
-          {!readOnly && onClearAll && (
+          {!readOnly && onClearAll && dataSource === "upload" && (
             <div className="mb-4 flex justify-end">
               <button
                 type="button"
