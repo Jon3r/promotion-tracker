@@ -94,8 +94,16 @@ export async function PUT(request) {
     return NextResponse.json({ error: "Missing overrides payload" }, { status: 400 });
   } catch (e) {
     console.error("save grading overrides failed:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    const missingTable =
+      /roster_overrides/i.test(msg) ||
+      /relation .* does not exist/i.test(msg);
     return NextResponse.json(
-      { error: "Could not save grading overrides" },
+      {
+        error: missingTable
+          ? "Database missing roster_overrides table. Run scripts/init-db.sql on your Postgres database."
+          : `Could not save grading overrides: ${msg}`,
+      },
       { status: 500 }
     );
   }

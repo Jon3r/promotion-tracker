@@ -174,6 +174,7 @@ export default function GradingDashboard({
       beltFilter: belt,
       stripeFilters,
       viewMode,
+      category: cat,
     });
   }
 
@@ -304,6 +305,9 @@ export default function GradingDashboard({
       alert(result.error || "Could not save grading belt");
       return;
     }
+    if (result.localOnly && result.warning) {
+      setMoveMessage(result.warning);
+    }
     const next = { ...gradingOverrides[category] };
     if (!gradingBelt) {
       delete next[student.contactKey];
@@ -324,7 +328,7 @@ export default function GradingDashboard({
 
     const contactKeys = [];
     for (const s of toMove) {
-      const current = effectiveGradingBelt(s);
+      const current = effectiveGradingBelt(s, category);
       const next = nextBeltInSequence(current, category);
       if (!next) continue;
       contactKeys.push({ contactKey: s.contactKey, gradingBelt: next });

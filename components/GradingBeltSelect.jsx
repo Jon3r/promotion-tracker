@@ -8,6 +8,7 @@ const DEFAULT_VALUE = "";
 /**
  * @param {{
  *   student: import('@/lib/parseExcel').Student,
+ *   category: 'adults'|'kids',
  *   beltOptions: string[],
  *   disabled?: boolean,
  *   saving?: boolean,
@@ -16,12 +17,13 @@ const DEFAULT_VALUE = "";
  */
 export default function GradingBeltSelect({
   student,
+  category = "adults",
   beltOptions,
   disabled,
   saving,
   onChange,
 }) {
-  const natural = defaultGradingBelt(student);
+  const natural = defaultGradingBelt(student, category);
   const hasOverride = Boolean(student.gradingBeltOverride);
   const selectValue = hasOverride ? student.gradingBeltOverride : DEFAULT_VALUE;
 

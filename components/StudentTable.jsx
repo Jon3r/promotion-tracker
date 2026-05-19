@@ -1,6 +1,7 @@
 "use client";
 
 import { formatDate, daysUntil } from "@/lib/dates";
+import { displayNextRank } from "@/lib/gradingBelt";
 import { ADULT_BELT_ORDER, KIDS_BELT_ORDER } from "@/lib/rank";
 import ExcludeStudentButton from "./ExcludeStudentButton";
 import GiSizeSelect from "./GiSizeSelect";
@@ -51,7 +52,9 @@ function StudentCard({
         <dt className="text-zinc-500">Current</dt>
         <dd className="min-w-0 text-zinc-800">{student.currentRank || "—"}</dd>
         <dt className="text-zinc-500">Next</dt>
-        <dd className="min-w-0 text-zinc-800">{student.nextRank || "—"}</dd>
+        <dd className="min-w-0 text-zinc-800">
+          {displayNextRank(student, category)}
+        </dd>
         <dt className="text-zinc-500">Gi size</dt>
         <dd className="text-zinc-700">
           {readOnly || !onGiSizeSave || !student.memberStyleId ? (
@@ -71,6 +74,7 @@ function StudentCard({
             <dd>
               <GradingBeltSelect
                 student={student}
+                category={category}
                 beltOptions={beltOptionsForCategory(category)}
                 saving={savingGradingKey === student.contactKey}
                 onChange={(belt) => onGradingBeltChange(student, belt)}
@@ -192,7 +196,9 @@ export default function StudentTable({
                     <span className="line-clamp-2">{student.currentRank || "—"}</span>
                   </td>
                   <td className="px-3 py-2 text-zinc-700">
-                    <span className="line-clamp-2">{student.nextRank || "—"}</span>
+                    <span className="line-clamp-2">
+                      {displayNextRank(student, category)}
+                    </span>
                   </td>
                   <td className="px-3 py-2 align-middle">
                     {readOnly || !onGiSizeSave || !student.memberStyleId ? (
@@ -232,6 +238,7 @@ export default function StudentTable({
                       {student.contactKey ? (
                         <GradingBeltSelect
                           student={student}
+                          category={category}
                           beltOptions={beltOptions}
                           saving={savingGradingKey === student.contactKey}
                           onChange={(belt) => onGradingBeltChange(student, belt)}
