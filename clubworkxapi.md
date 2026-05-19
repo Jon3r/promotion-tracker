@@ -43,6 +43,7 @@ https://app.clubworx.com/api/v2/
 - **Show Member Style Details**: `GET /api/v2/member_styles/:id`
 - **Add Style to Member**: `POST /api/v2/member_styles`
 - **Update belt size** (used by this app): `PUT /api/v2/member_styles/:id` with form body `belt_size=...` and `account_key` query param. If ClubWorx returns 404, contact ClubWorx support — the list/show endpoints work but update may not be enabled on all accounts.
+- **Gi size dropdown options** (this app): unique `belt_size` values are read from `GET /api/v2/member_styles` (see `/api/clubworx/gi-sizes` in this repo).
 
 ### Members
 

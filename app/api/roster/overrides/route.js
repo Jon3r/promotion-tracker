@@ -4,6 +4,7 @@ import {
   setGradingOverridesForCategory,
   clearGradingOverrides,
   upsertGradingOverride,
+  deleteGradingOverride,
   isPostgresConfigured,
 } from "@/lib/rosterOverridesDb.server";
 import { verifyUploadSecret } from "@/lib/authSecret.server";
@@ -53,6 +54,23 @@ export async function PUT(request) {
     if (body.clear) {
       await clearGradingOverrides(category);
       return NextResponse.json({ ok: true, cleared: true });
+    }
+
+    if (body.contactKey) {
+      const contactKey = String(body.contactKey);
+      if (!contactKey) {
+        return NextResponse.json({ error: "Missing contactKey" }, { status: 400 });
+      }
+      if (!body.gradingBelt) {
+        await deleteGradingOverride(category, contactKey);
+      } else {
+        await upsertGradingOverride(
+          category,
+          contactKey,
+          String(body.gradingBelt)
+        );
+      }
+      return NextResponse.json({ ok: true });
     }
 
     if (body.bulkMove && Array.isArray(body.contactKeys)) {

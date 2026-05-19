@@ -10,9 +10,12 @@ export default function BeltSection({
   category = "adults",
   readOnly = false,
   defaultOpen = true,
+  giSizeOptions = [],
   onExcludeStudent,
   onGiSizeSave,
+  onGradingBeltChange,
   savingGiSizeId,
+  savingGradingKey,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const isUnknown = belt === "unknown";
@@ -44,9 +47,12 @@ export default function BeltSection({
             students={students}
             category={category}
             readOnly={readOnly}
+            giSizeOptions={giSizeOptions}
             onExcludeStudent={onExcludeStudent}
             onGiSizeSave={onGiSizeSave}
+            onGradingBeltChange={onGradingBeltChange}
             savingGiSizeId={savingGiSizeId}
+            savingGradingKey={savingGradingKey}
           />
         </div>
       )}

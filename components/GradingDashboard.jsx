@@ -21,7 +21,10 @@ import {
 import {
   clearGradingOverrides,
   saveGradingBulkMove,
+  saveStudentGradingOverride,
+  fetchGiSizes,
 } from "@/lib/rosterClient";
+import { buildGiSizeOptions } from "@/lib/giSizes";
 import {
   clearExcludedKeys,
   exclusionKey,
@@ -82,8 +85,26 @@ export default function GradingDashboard({
   const [viewMode, setViewMode] = useState("grading");
   const [excluded, setExcluded] = useState({ adults: [], kids: [] });
   const [savingGiSizeId, setSavingGiSizeId] = useState(null);
+  const [savingGradingKey, setSavingGradingKey] = useState(null);
+  const [fetchedGiSizes, setFetchedGiSizes] = useState({ adults: [], kids: [] });
   const [moveMessage, setMoveMessage] = useState("");
   const [moveError, setMoveError] = useState("");
+
+  useEffect(() => {
+    if (readOnly || dataSource !== "clubworx") return;
+    let cancelled = false;
+    (async () => {
+      const result = await fetchGiSizes();
+      if (cancelled || !result.ok) return;
+      setFetchedGiSizes({
+        adults: result.adults || [],
+        kids: result.kids || [],
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [readOnly, dataSource, adults.savedAt, kids.savedAt]);
 
   useEffect(() => {
     setExcluded(loadExcludedKeys());
@@ -212,6 +233,16 @@ export default function GradingDashboard({
 
   const hasAnyData = adults.students.length > 0 || kids.students.length > 0;
 
+  const giSizeOptions = useMemo(
+    () =>
+      buildGiSizeOptions(
+        category,
+        fetchedGiSizes[category] || [],
+        dataset.students
+      ),
+    [category, fetchedGiSizes, dataset.students]
+  );
+
   const lastSavedLabel = useMemo(() => {
     const times = [adults.savedAt, kids.savedAt]
       .map((t) => (t ? parseDate(t) : null))
@@ -257,6 +288,32 @@ export default function GradingDashboard({
     if (!result.ok) {
       alert(result.error || "Could not save Gi size");
     }
+  }
+
+  async function handleGradingBeltChange(student, gradingBelt) {
+    if (!onGradingOverridesChange || !student.contactKey) return;
+    setSavingGradingKey(student.contactKey);
+    const result = await saveStudentGradingOverride({
+      category,
+      contactKey: student.contactKey,
+      gradingBelt: gradingBelt || "",
+      password: syncPassword || undefined,
+    });
+    setSavingGradingKey(null);
+    if (!result.ok) {
+      alert(result.error || "Could not save grading belt");
+      return;
+    }
+    const next = { ...gradingOverrides[category] };
+    if (!gradingBelt) {
+      delete next[student.contactKey];
+    } else {
+      next[student.contactKey] = gradingBelt;
+    }
+    onGradingOverridesChange({
+      ...gradingOverrides,
+      [category]: next,
+    });
   }
 
   async function handleBulkMoveGrading() {
@@ -575,6 +632,7 @@ export default function GradingDashboard({
                     students={students}
                     category={category}
                     readOnly={readOnly}
+                    giSizeOptions={giSizeOptions}
                     defaultOpen={belt !== "unknown"}
                     onExcludeStudent={(student) =>
                       excludeStudent(category, student)
@@ -582,7 +640,13 @@ export default function GradingDashboard({
                     onGiSizeSave={
                       readOnly || !onGiSizeSave ? undefined : handleGiSizeSave
                     }
+                    onGradingBeltChange={
+                      readOnly || !onGradingOverridesChange
+                        ? undefined
+                        : handleGradingBeltChange
+                    }
                     savingGiSizeId={savingGiSizeId}
+                    savingGradingKey={savingGradingKey}
                   />
                 ))}
                 {grouped.size === 0 && (

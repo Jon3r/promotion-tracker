@@ -1,10 +1,16 @@
 "use client";
 
 import { formatDate, daysUntil } from "@/lib/dates";
+import { ADULT_BELT_ORDER, KIDS_BELT_ORDER } from "@/lib/rank";
 import ExcludeStudentButton from "./ExcludeStudentButton";
 import GiSizeSelect from "./GiSizeSelect";
+import GradingBeltSelect from "./GradingBeltSelect";
 
 const HIGHLIGHT_DAYS = 14;
+
+function beltOptionsForCategory(category) {
+  return category === "kids" ? KIDS_BELT_ORDER : ADULT_BELT_ORDER;
+}
 
 function isUpcoming(student) {
   const until = daysUntil(student.promotionDate);
@@ -15,9 +21,12 @@ function StudentCard({
   student,
   category,
   readOnly,
+  giSizeOptions,
   onExclude,
   onGiSizeSave,
+  onGradingBeltChange,
   savingGiSizeId,
+  savingGradingKey,
 }) {
   const highlight = isUpcoming(student);
 
@@ -49,13 +58,26 @@ function StudentCard({
             student.beltSize || "—"
           ) : (
             <GiSizeSelect
-              category={category}
+              options={giSizeOptions}
               value={student.beltSize}
               saving={savingGiSizeId === student.memberStyleId}
               onSave={(size) => onGiSizeSave(student, size)}
             />
           )}
         </dd>
+        {!readOnly && onGradingBeltChange && student.contactKey && (
+          <>
+            <dt className="text-zinc-500">Grading belt</dt>
+            <dd>
+              <GradingBeltSelect
+                student={student}
+                beltOptions={beltOptionsForCategory(category)}
+                saving={savingGradingKey === student.contactKey}
+                onChange={(belt) => onGradingBeltChange(student, belt)}
+              />
+            </dd>
+          </>
+        )}
         <dt className="text-zinc-500">Promotion</dt>
         <dd className="text-zinc-700">{formatDate(student.promotionDate)}</dd>
         <dt className="text-zinc-500">Last promoted</dt>
@@ -94,13 +116,18 @@ export default function StudentTable({
   students,
   category = "adults",
   readOnly = false,
+  giSizeOptions = [],
   onExcludeStudent,
   onGiSizeSave,
+  onGradingBeltChange,
   savingGiSizeId = null,
+  savingGradingKey = null,
 }) {
   if (!students.length) {
     return <p className="py-4 text-sm text-zinc-500">No students in this group.</p>;
   }
+
+  const beltOptions = beltOptionsForCategory(category);
 
   return (
     <>
@@ -111,28 +138,34 @@ export default function StudentTable({
             student={student}
             category={category}
             readOnly={readOnly}
+            giSizeOptions={giSizeOptions}
             onExclude={onExcludeStudent}
             onGiSizeSave={onGiSizeSave}
+            onGradingBeltChange={onGradingBeltChange}
             savingGiSizeId={savingGiSizeId}
+            savingGradingKey={savingGradingKey}
           />
         ))}
       </ul>
 
       <div className="hidden overflow-x-auto md:block">
-        <table className="min-w-full divide-y divide-zinc-200 text-left text-sm">
+        <table className="w-full min-w-[1280px] table-fixed divide-y divide-zinc-200 text-left text-sm">
           <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-500">
             <tr>
               {onExcludeStudent && (
                 <th className="w-10 px-2 py-2" aria-label="Remove" />
               )}
-              <th className="px-3 py-2">Name</th>
-              <th className="px-3 py-2">Current</th>
-              <th className="px-3 py-2">Next</th>
-              <th className="px-3 py-2">Gi size</th>
-              <th className="px-3 py-2">Promotion date</th>
-              <th className="px-3 py-2">Last promoted</th>
-              <th className="px-3 py-2">Email</th>
-              <th className="px-3 py-2">Phone</th>
+              <th className="w-[14%] px-3 py-2">Name</th>
+              <th className="w-[12%] px-3 py-2">Current</th>
+              <th className="w-[12%] px-3 py-2">Next</th>
+              <th className="w-[8%] px-3 py-2">Gi size</th>
+              <th className="w-[14%] px-3 py-2">Promotion date</th>
+              <th className="w-[12%] px-3 py-2">Last promoted</th>
+              <th className="w-[14%] px-3 py-2">Email</th>
+              <th className="w-[10%] px-3 py-2">Phone</th>
+              {!readOnly && onGradingBeltChange && (
+                <th className="w-[14%] px-3 py-2">Grading belt</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 bg-white">
@@ -152,38 +185,38 @@ export default function StudentTable({
                       />
                     </td>
                   )}
-                  <td className="whitespace-nowrap px-3 py-2 font-medium text-zinc-900">
-                    {student.fullName}
+                  <td className="px-3 py-2 font-medium text-zinc-900">
+                    <span className="line-clamp-2">{student.fullName}</span>
                   </td>
                   <td className="px-3 py-2 text-zinc-700">
-                    {student.currentRank || "—"}
+                    <span className="line-clamp-2">{student.currentRank || "—"}</span>
                   </td>
                   <td className="px-3 py-2 text-zinc-700">
-                    {student.nextRank || "—"}
+                    <span className="line-clamp-2">{student.nextRank || "—"}</span>
                   </td>
-                  <td className="px-3 py-2 text-zinc-600">
+                  <td className="px-3 py-2 align-middle">
                     {readOnly || !onGiSizeSave || !student.memberStyleId ? (
-                      student.beltSize || "—"
+                      <span className="text-zinc-600">{student.beltSize || "—"}</span>
                     ) : (
                       <GiSizeSelect
-                        category={category}
+                        options={giSizeOptions}
                         value={student.beltSize}
                         saving={savingGiSizeId === student.memberStyleId}
                         onSave={(size) => onGiSizeSave(student, size)}
                       />
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-zinc-700">
+                  <td className="px-3 py-2 text-zinc-700">
                     {formatDate(student.promotionDate)}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-zinc-600">
+                  <td className="px-3 py-2 text-zinc-600">
                     {formatDate(student.mostRecentPromotion)}
                   </td>
-                  <td className="max-w-[180px] truncate px-3 py-2 text-zinc-600">
+                  <td className="px-3 py-2 text-zinc-600">
                     {student.email ? (
                       <a
                         href={`mailto:${student.email}`}
-                        className="text-blue-600 hover:underline"
+                        className="break-all text-blue-600 hover:underline"
                       >
                         {student.email}
                       </a>
@@ -191,9 +224,23 @@ export default function StudentTable({
                       "—"
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-zinc-600">
+                  <td className="px-3 py-2 text-zinc-600">
                     {student.phone || "—"}
                   </td>
+                  {!readOnly && onGradingBeltChange && (
+                    <td className="px-3 py-2 align-middle">
+                      {student.contactKey ? (
+                        <GradingBeltSelect
+                          student={student}
+                          beltOptions={beltOptions}
+                          saving={savingGradingKey === student.contactKey}
+                          onChange={(belt) => onGradingBeltChange(student, belt)}
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}

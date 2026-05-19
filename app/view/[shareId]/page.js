@@ -45,7 +45,7 @@ export default function SharedReportPage({ params }) {
   }, [shareId]);
 
   return (
-    <main className="mx-auto min-h-screen w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-4 py-8 sm:px-6">
+    <main className="mx-auto min-h-screen w-full min-w-0 max-w-[90rem] flex-1 overflow-x-clip px-4 py-8 sm:px-6">
       <PageHeader title="BJJ grading report">
         <p className="mt-2 text-zinc-600">Shared view — read only</p>
       </PageHeader>

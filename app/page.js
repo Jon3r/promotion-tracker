@@ -218,14 +218,14 @@ export default function Home() {
 
   if (!hydrated) {
     return (
-      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full min-w-0 max-w-[90rem] flex-1 overflow-x-clip px-4 py-8 sm:px-6">
         <p className="text-center text-zinc-500">Loading roster from ClubWorx…</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full min-w-0 max-w-6xl flex-1 overflow-x-clip px-4 py-8 sm:px-6">
+    <main className="mx-auto min-h-screen w-full min-w-0 max-w-[90rem] flex-1 overflow-x-clip px-4 py-8 sm:px-6">
       <PageHeader title="BJJ grading report">
         <p className="mt-2 max-w-2xl text-zinc-600">
           Belt ranks are loaded from ClubWorx and stored in the cloud so every
