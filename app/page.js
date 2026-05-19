@@ -8,6 +8,8 @@ import {
   fetchRoster,
   syncRosterFromClubWorx,
   fetchSyncStatus,
+  fetchGradingOverrides,
+  updateStudentGiSize,
 } from "@/lib/rosterClient";
 import { formatDate, parseDate } from "@/lib/dates";
 import GradingDashboard from "@/components/GradingDashboard";
@@ -54,6 +56,10 @@ export default function Home() {
   const [clubworxSyncing, setClubworxSyncing] = useState(false);
   const [clubworxMessage, setClubworxMessage] = useState("");
   const [clubworxError, setClubworxError] = useState("");
+  const [gradingOverrides, setGradingOverrides] = useState({
+    adults: {},
+    kids: {},
+  });
 
   const applyRoster = useCallback((nextAdults, nextKids) => {
     setAdults(nextAdults);
@@ -178,6 +184,14 @@ export default function Home() {
         setCloudStatus("synced");
       }
 
+      const overridesRes = await fetchGradingOverrides();
+      if (overridesRes.ok) {
+        setGradingOverrides({
+          adults: overridesRes.adults || {},
+          kids: overridesRes.kids || {},
+        });
+      }
+
       setHydrated(true);
     }
 
@@ -297,6 +311,34 @@ export default function Home() {
         adults={adults}
         kids={kids}
         dataSource="clubworx"
+        syncPassword={syncPassword}
+        gradingOverrides={gradingOverrides}
+        onGradingOverridesChange={setGradingOverrides}
+        onGiSizeSave={async (cat, student, beltSize) => {
+          if (!student.memberStyleId) {
+            return { ok: false, error: "Missing ClubWorx member style id" };
+          }
+          const result = await updateStudentGiSize({
+            memberStyleId: student.memberStyleId,
+            category: cat,
+            contactKey: student.contactKey,
+            beltSize,
+            password: syncPassword || undefined,
+          });
+          if (result.ok) {
+            const setDataset = cat === "adults" ? setAdults : setKids;
+            setDataset((prev) => ({
+              ...prev,
+              students: prev.students.map((s) =>
+                s.memberStyleId === student.memberStyleId ||
+                s.contactKey === student.contactKey
+                  ? { ...s, beltSize }
+                  : s
+              ),
+            }));
+          }
+          return result;
+        }}
         emptyMessage={
           clubworxConfigured && postgresConfigured
             ? "No members yet. Use Sync from ClubWorx above to load belt ranks."

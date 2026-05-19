@@ -7,10 +7,21 @@ import {
   applyFilters,
   stripeFilterOptions,
   beltFilterOptions,
+  gradingBeltFilterOptions,
 } from "@/lib/groupStudents";
 import { beltDisplayName } from "@/lib/rank";
 import { formatDate, parseDate } from "@/lib/dates";
 import { exportNamesPdf, exportBothCategoriesPdf } from "@/lib/exportPdf";
+import { exportBeltOrderPdf, exportBeltOrderCsv } from "@/lib/exportBeltOrder";
+import {
+  mergeGradingOverrides,
+  nextBeltInSequence,
+  effectiveGradingBelt,
+} from "@/lib/gradingBelt";
+import {
+  clearGradingOverrides,
+  saveGradingBulkMove,
+} from "@/lib/rosterClient";
 import {
   clearExcludedKeys,
   exclusionKey,
@@ -39,6 +50,10 @@ import StripeFilter from "@/components/StripeFilter";
  * @param {string} [props.viewLabel]
  * @param {string|null} [props.adultsUploadInfo]
  * @param {string|null} [props.kidsUploadInfo]
+ * @param {string} [props.syncPassword]
+ * @param {{ adults: Record<string, string>, kids: Record<string, string> }} [props.gradingOverrides]
+ * @param {(o: { adults: Record<string, string>, kids: Record<string, string> }) => void} [props.onGradingOverridesChange]
+ * @param {(category: 'adults'|'kids', contactKey: string, beltSize: string) => Promise<{ ok: boolean, error?: string }>} [props.onGiSizeSave]
  */
 export default function GradingDashboard({
   readOnly = false,
@@ -54,13 +69,21 @@ export default function GradingDashboard({
   onClearKids,
   onClearAll,
   viewLabel,
+  syncPassword,
+  gradingOverrides = { adults: {}, kids: {} },
+  onGradingOverridesChange,
+  onGiSizeSave,
 }) {
   const [activeTab, setActiveTab] = useState("adults");
   const [search, setSearch] = useState("");
   const [beltFilter, setBeltFilter] = useState("all");
   const [stripeFilters, setStripeFilters] = useState([]);
   const [sortBy, setSortBy] = useState("date");
+  const [viewMode, setViewMode] = useState("grading");
   const [excluded, setExcluded] = useState({ adults: [], kids: [] });
+  const [savingGiSizeId, setSavingGiSizeId] = useState(null);
+  const [moveMessage, setMoveMessage] = useState("");
+  const [moveError, setMoveError] = useState("");
 
   useEffect(() => {
     setExcluded(loadExcludedKeys());
@@ -89,14 +112,21 @@ export default function GradingDashboard({
   const category = activeTab;
   const dataset = category === "adults" ? adults : kids;
 
-  const beltOptions = useMemo(
-    () => beltFilterOptions(dataset.students, category),
-    [dataset.students, category]
+  const studentsWithOverrides = useMemo(
+    () => mergeGradingOverrides(dataset.students, gradingOverrides[category] || {}),
+    [dataset.students, gradingOverrides, category]
   );
 
+  const beltOptions = useMemo(() => {
+    if (viewMode === "grading") {
+      return gradingBeltFilterOptions(studentsWithOverrides, category);
+    }
+    return beltFilterOptions(studentsWithOverrides, category);
+  }, [studentsWithOverrides, category, viewMode]);
+
   const stripeOptions = useMemo(
-    () => stripeFilterOptions(dataset.students),
-    [dataset.students]
+    () => stripeFilterOptions(studentsWithOverrides),
+    [studentsWithOverrides]
   );
 
   const effectiveBeltFilter =
@@ -110,49 +140,74 @@ export default function GradingDashboard({
     stripeFilters,
   };
 
-  function filteredFor(cat, students) {
-    const belts = beltFilterOptions(students, cat);
+  function filteredFor(cat, students, overrides) {
+    const merged = mergeGradingOverrides(students, overrides[cat] || {});
+    const belts =
+      viewMode === "grading"
+        ? gradingBeltFilterOptions(merged, cat)
+        : beltFilterOptions(merged, cat);
     const belt =
       beltFilter === "all" || belts.includes(beltFilter) ? beltFilter : "all";
-    return applyFilters(students, {
+    return applyFilters(merged, {
       search,
       beltFilter: belt,
       stripeFilters,
+      viewMode,
     });
   }
 
   const filteredStudents = useMemo(() => {
-    const filtered = filteredFor(category, dataset.students);
+    const filtered = filteredFor(category, dataset.students, gradingOverrides);
     return withoutExcluded(filtered, category, excluded[category]);
   }, [
     dataset.students,
+    gradingOverrides,
     category,
     search,
     beltFilter,
     stripeFilters,
+    viewMode,
     excluded,
   ]);
 
   const adultsFiltered = useMemo(() => {
-    const filtered = filteredFor("adults", adults.students);
+    const filtered = filteredFor("adults", adults.students, gradingOverrides);
     return withoutExcluded(filtered, "adults", excluded.adults);
-  }, [adults.students, search, beltFilter, stripeFilters, excluded.adults]);
+  }, [
+    adults.students,
+    gradingOverrides,
+    search,
+    beltFilter,
+    stripeFilters,
+    viewMode,
+    excluded.adults,
+  ]);
 
   const kidsFiltered = useMemo(() => {
-    const filtered = filteredFor("kids", kids.students);
+    const filtered = filteredFor("kids", kids.students, gradingOverrides);
     return withoutExcluded(filtered, "kids", excluded.kids);
-  }, [kids.students, search, beltFilter, stripeFilters, excluded.kids]);
+  }, [
+    kids.students,
+    gradingOverrides,
+    search,
+    beltFilter,
+    stripeFilters,
+    viewMode,
+    excluded.kids,
+  ]);
 
   const hiddenCountForTab = excluded[category].length;
 
+  const groupOptions = viewMode === "grading" ? { groupByGrading: true } : {};
+
   const grouped = useMemo(
-    () => groupByBelt(filteredStudents, category, sortBy),
-    [filteredStudents, category, sortBy]
+    () => groupByBelt(filteredStudents, category, sortBy, groupOptions),
+    [filteredStudents, category, sortBy, viewMode]
   );
 
   const summaryCounts = useMemo(
-    () => beltCounts(filteredStudents, category),
-    [filteredStudents, category]
+    () => beltCounts(filteredStudents, category, viewMode),
+    [filteredStudents, category, viewMode]
   );
 
   const hasAnyData = adults.students.length > 0 || kids.students.length > 0;
@@ -178,6 +233,107 @@ export default function GradingDashboard({
       adults: adultsFiltered,
       kids: kidsFiltered,
     });
+  }
+
+  async function handleExportBeltOrderPdf() {
+    await exportBeltOrderPdf(filteredStudents, {
+      category,
+      filename: `belt-order-${category}-${new Date().toISOString().slice(0, 10)}.pdf`,
+    });
+  }
+
+  function handleExportBeltOrderCsv() {
+    exportBeltOrderCsv(filteredStudents, {
+      category,
+      filename: `belt-order-${category}-${new Date().toISOString().slice(0, 10)}.csv`,
+    });
+  }
+
+  async function handleGiSizeSave(student, beltSize) {
+    if (!onGiSizeSave || !student.memberStyleId) return;
+    setSavingGiSizeId(student.memberStyleId);
+    const result = await onGiSizeSave(category, student, beltSize);
+    setSavingGiSizeId(null);
+    if (!result.ok) {
+      alert(result.error || "Could not save Gi size");
+    }
+  }
+
+  async function handleBulkMoveGrading() {
+    setMoveError("");
+    setMoveMessage("");
+    const toMove = filteredStudents.filter((s) => s.contactKey);
+    if (!toMove.length) return;
+
+    const contactKeys = [];
+    for (const s of toMove) {
+      const current = effectiveGradingBelt(s);
+      const next = nextBeltInSequence(current, category);
+      if (!next) continue;
+      contactKeys.push({ contactKey: s.contactKey, gradingBelt: next });
+    }
+
+    if (!contactKeys.length) {
+      setMoveError("No students can move to a higher belt colour from this filter.");
+      return;
+    }
+
+    const sampleBelt = contactKeys[0].gradingBelt;
+    const label =
+      sampleBelt === "unknown"
+        ? "next grading"
+        : beltDisplayName(sampleBelt);
+    if (
+      !window.confirm(
+        `Move ${contactKeys.length} student(s) to ${label} grading list? This does not change ClubWorx ranks.`
+      )
+    ) {
+      return;
+    }
+
+    const result = await saveGradingBulkMove({
+      category,
+      contactKeys,
+      password: syncPassword || undefined,
+    });
+
+    if (!result.ok) {
+      setMoveError(result.error || "Could not save grading moves");
+      return;
+    }
+
+    const nextOverrides = { ...gradingOverrides[category] };
+    for (const { contactKey, gradingBelt } of contactKeys) {
+      nextOverrides[contactKey] = gradingBelt;
+    }
+    onGradingOverridesChange?.({
+      ...gradingOverrides,
+      [category]: nextOverrides,
+    });
+    setMoveMessage(`Moved ${contactKeys.length} student(s) to ${label} grading.`);
+  }
+
+  async function handleResetGradingMoves() {
+    if (
+      !window.confirm(
+        `Reset all manual grading moves for ${category}? ClubWorx ranks are unchanged.`
+      )
+    ) {
+      return;
+    }
+    const result = await clearGradingOverrides({
+      category,
+      password: syncPassword || undefined,
+    });
+    if (!result.ok) {
+      setMoveError(result.error || "Could not reset grading moves");
+      return;
+    }
+    onGradingOverridesChange?.({
+      ...gradingOverrides,
+      [category]: {},
+    });
+    setMoveMessage(`Reset grading moves for ${category}.`);
   }
 
   return (
@@ -247,12 +403,28 @@ export default function GradingDashboard({
                 className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:col-span-2"
               />
               <select
+                value={viewMode}
+                onChange={(e) => {
+                  setViewMode(e.target.value);
+                  setBeltFilter("all");
+                }}
+                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2"
+                aria-label="View mode"
+              >
+                <option value="grading">View by grading belt (next colour)</option>
+                <option value="current">View by current belt</option>
+              </select>
+              <select
                 value={effectiveBeltFilter}
                 onChange={(e) => setBeltFilter(e.target.value)}
                 className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
                 aria-label="Filter by belt colour"
               >
-                <option value="all">All belt colours</option>
+                <option value="all">
+                  {viewMode === "grading"
+                    ? "All grading belts"
+                    : "All belt colours"}
+                </option>
                 {beltOptions.map((belt) => (
                   <option key={belt} value={belt}>
                     {belt === "unknown"
@@ -276,13 +448,48 @@ export default function GradingDashboard({
                 <option value="date">Sort by promotion date</option>
                 <option value="name">Sort by name</option>
               </select>
+              {!readOnly && dataSource === "clubworx" && onGradingOverridesChange && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleBulkMoveGrading}
+                    disabled={filteredStudents.length === 0}
+                    className="w-full rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-900 hover:bg-blue-100 disabled:opacity-50 sm:col-span-2"
+                  >
+                    Move filtered to next belt grading
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetGradingMoves}
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 sm:col-span-2"
+                  >
+                    Reset grading moves ({category})
+                  </button>
+                </>
+              )}
               <button
                 type="button"
                 onClick={handleExportCurrentTab}
                 disabled={filteredStudents.length === 0}
                 className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 sm:col-span-2"
               >
-                Export PDF ({category})
+                Export names PDF ({category})
+              </button>
+              <button
+                type="button"
+                onClick={handleExportBeltOrderPdf}
+                disabled={filteredStudents.length === 0}
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                Belt order PDF
+              </button>
+              <button
+                type="button"
+                onClick={handleExportBeltOrderCsv}
+                disabled={filteredStudents.length === 0}
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                Belt order CSV
               </button>
               {adults.students.length > 0 && kids.students.length > 0 && (
                 <button
@@ -298,6 +505,15 @@ export default function GradingDashboard({
               )}
             </div>
           </div>
+
+          {moveMessage && (
+            <p className="mb-2 text-sm text-green-800">{moveMessage}</p>
+          )}
+          {moveError && (
+            <p className="mb-2 text-sm text-red-600" role="alert">
+              {moveError}
+            </p>
+          )}
 
           {!readOnly && onClearAll && dataSource === "upload" && (
             <div className="mb-4 flex justify-end">
@@ -348,17 +564,25 @@ export default function GradingDashboard({
 
               <section className="space-y-4">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                  Students by belt
+                  {viewMode === "grading"
+                    ? "Students by grading belt"
+                    : "Students by belt"}
                 </h2>
                 {[...grouped.entries()].map(([belt, students]) => (
                   <BeltSection
                     key={belt}
                     belt={belt}
                     students={students}
+                    category={category}
+                    readOnly={readOnly}
                     defaultOpen={belt !== "unknown"}
                     onExcludeStudent={(student) =>
                       excludeStudent(category, student)
                     }
+                    onGiSizeSave={
+                      readOnly || !onGiSizeSave ? undefined : handleGiSizeSave
+                    }
+                    savingGiSizeId={savingGiSizeId}
                   />
                 ))}
                 {grouped.size === 0 && (

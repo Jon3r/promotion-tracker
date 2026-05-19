@@ -2,6 +2,7 @@
 
 import { formatDate, daysUntil } from "@/lib/dates";
 import ExcludeStudentButton from "./ExcludeStudentButton";
+import GiSizeSelect from "./GiSizeSelect";
 
 const HIGHLIGHT_DAYS = 14;
 
@@ -10,7 +11,14 @@ function isUpcoming(student) {
   return until != null && until >= 0 && until <= HIGHLIGHT_DAYS;
 }
 
-function StudentCard({ student, onExclude }) {
+function StudentCard({
+  student,
+  category,
+  readOnly,
+  onExclude,
+  onGiSizeSave,
+  savingGiSizeId,
+}) {
   const highlight = isUpcoming(student);
 
   return (
@@ -36,7 +44,18 @@ function StudentCard({ student, onExclude }) {
         <dt className="text-zinc-500">Next</dt>
         <dd className="min-w-0 text-zinc-800">{student.nextRank || "—"}</dd>
         <dt className="text-zinc-500">Gi size</dt>
-        <dd className="text-zinc-700">{student.beltSize || "—"}</dd>
+        <dd className="text-zinc-700">
+          {readOnly || !onGiSizeSave || !student.memberStyleId ? (
+            student.beltSize || "—"
+          ) : (
+            <GiSizeSelect
+              category={category}
+              value={student.beltSize}
+              saving={savingGiSizeId === student.memberStyleId}
+              onSave={(size) => onGiSizeSave(student, size)}
+            />
+          )}
+        </dd>
         <dt className="text-zinc-500">Promotion</dt>
         <dd className="text-zinc-700">{formatDate(student.promotionDate)}</dd>
         <dt className="text-zinc-500">Last promoted</dt>
@@ -71,7 +90,14 @@ function StudentCard({ student, onExclude }) {
   );
 }
 
-export default function StudentTable({ students, onExcludeStudent }) {
+export default function StudentTable({
+  students,
+  category = "adults",
+  readOnly = false,
+  onExcludeStudent,
+  onGiSizeSave,
+  savingGiSizeId = null,
+}) {
   if (!students.length) {
     return <p className="py-4 text-sm text-zinc-500">No students in this group.</p>;
   }
@@ -81,9 +107,13 @@ export default function StudentTable({ students, onExcludeStudent }) {
       <ul className="space-y-2 md:hidden">
         {students.map((student) => (
           <StudentCard
-            key={`${student.fullName}-${student.email}-${student.promotionDate?.toISOString()}`}
+            key={`${student.contactKey || student.fullName}-${student.email}`}
             student={student}
+            category={category}
+            readOnly={readOnly}
             onExclude={onExcludeStudent}
+            onGiSizeSave={onGiSizeSave}
+            savingGiSizeId={savingGiSizeId}
           />
         ))}
       </ul>
@@ -92,7 +122,9 @@ export default function StudentTable({ students, onExcludeStudent }) {
         <table className="min-w-full divide-y divide-zinc-200 text-left text-sm">
           <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-500">
             <tr>
-              {onExcludeStudent && <th className="w-10 px-2 py-2" aria-label="Remove" />}
+              {onExcludeStudent && (
+                <th className="w-10 px-2 py-2" aria-label="Remove" />
+              )}
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Current</th>
               <th className="px-3 py-2">Next</th>
@@ -109,7 +141,7 @@ export default function StudentTable({ students, onExcludeStudent }) {
 
               return (
                 <tr
-                  key={`${student.fullName}-${student.email}-${student.promotionDate?.toISOString()}`}
+                  key={`${student.contactKey || student.fullName}-${student.email}`}
                   className={highlight ? "bg-amber-50/80" : ""}
                 >
                   {onExcludeStudent && (
@@ -130,7 +162,16 @@ export default function StudentTable({ students, onExcludeStudent }) {
                     {student.nextRank || "—"}
                   </td>
                   <td className="px-3 py-2 text-zinc-600">
-                    {student.beltSize || "—"}
+                    {readOnly || !onGiSizeSave || !student.memberStyleId ? (
+                      student.beltSize || "—"
+                    ) : (
+                      <GiSizeSelect
+                        category={category}
+                        value={student.beltSize}
+                        saving={savingGiSizeId === student.memberStyleId}
+                        onSave={(size) => onGiSizeSave(student, size)}
+                      />
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-zinc-700">
                     {formatDate(student.promotionDate)}

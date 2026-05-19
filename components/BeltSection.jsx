@@ -7,8 +7,12 @@ import StudentTable from "./StudentTable";
 export default function BeltSection({
   belt,
   students,
+  category = "adults",
+  readOnly = false,
   defaultOpen = true,
   onExcludeStudent,
+  onGiSizeSave,
+  savingGiSizeId,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const isUnknown = belt === "unknown";
@@ -38,7 +42,11 @@ export default function BeltSection({
         <div className="min-w-0 border-t border-zinc-100 px-1 pb-2 sm:px-2">
           <StudentTable
             students={students}
+            category={category}
+            readOnly={readOnly}
             onExcludeStudent={onExcludeStudent}
+            onGiSizeSave={onGiSizeSave}
+            savingGiSizeId={savingGiSizeId}
           />
         </div>
       )}

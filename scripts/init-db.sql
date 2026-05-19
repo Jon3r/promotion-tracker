@@ -24,3 +24,13 @@ CREATE TABLE IF NOT EXISTS shares (
 );
 
 CREATE INDEX IF NOT EXISTS shares_expires_at_idx ON shares (expires_at);
+
+CREATE TABLE IF NOT EXISTS roster_overrides (
+  contact_key TEXT NOT NULL,
+  category TEXT NOT NULL,
+  grading_belt TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (contact_key, category)
+);
+
+CREATE INDEX IF NOT EXISTS roster_overrides_category_idx ON roster_overrides (category);
