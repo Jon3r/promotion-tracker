@@ -17,6 +17,7 @@ import {
   mergeGradingOverrides,
   nextBeltInSequence,
   effectiveGradingBelt,
+  supportsGradingBeltView,
 } from "@/lib/gradingBelt";
 import {
   clearGradingOverrides,
@@ -88,7 +89,7 @@ export default function GradingDashboard({
   const [beltFilter, setBeltFilter] = useState("all");
   const [stripeFilters, setStripeFilters] = useState([]);
   const [sortBy, setSortBy] = useState("date");
-  const [viewMode, setViewMode] = useState("grading");
+  const [viewMode, setViewMode] = useState("current");
   const [excluded, setExcluded] = useState({ adults: [], kids: [] });
   const [savingGiSizeId, setSavingGiSizeId] = useState(null);
   const [savingGradingKey, setSavingGradingKey] = useState(null);
@@ -149,18 +150,21 @@ export default function GradingDashboard({
 
   const category = activeTab;
   const dataset = category === "adults" ? adults : kids;
+  const gradingViewEnabled = supportsGradingBeltView(category);
+  const effectiveViewMode = gradingViewEnabled ? viewMode : "current";
 
-  const studentsWithOverrides = useMemo(
-    () => mergeGradingOverrides(dataset.students, gradingOverrides[category] || {}),
-    [dataset.students, gradingOverrides, category]
-  );
+  const studentsWithOverrides = useMemo(() => {
+    const list = dataset.students;
+    if (!gradingViewEnabled) return list;
+    return mergeGradingOverrides(list, gradingOverrides[category] || {});
+  }, [dataset.students, gradingOverrides, category, gradingViewEnabled]);
 
   const beltOptions = useMemo(() => {
-    if (viewMode === "grading") {
+    if (effectiveViewMode === "grading") {
       return gradingBeltFilterOptions(studentsWithOverrides, category);
     }
     return beltFilterOptions(studentsWithOverrides, category);
-  }, [studentsWithOverrides, category, viewMode]);
+  }, [studentsWithOverrides, category, effectiveViewMode]);
 
   const stripeOptions = useMemo(
     () => stripeFilterOptions(studentsWithOverrides),
@@ -179,9 +183,13 @@ export default function GradingDashboard({
   };
 
   function filteredFor(cat, students, overrides) {
-    const merged = mergeGradingOverrides(students, overrides[cat] || {});
+    const useGrading = supportsGradingBeltView(cat);
+    const merged = useGrading
+      ? mergeGradingOverrides(students, overrides[cat] || {})
+      : students;
+    const catViewMode = useGrading ? viewMode : "current";
     const belts =
-      viewMode === "grading"
+      catViewMode === "grading"
         ? gradingBeltFilterOptions(merged, cat)
         : beltFilterOptions(merged, cat);
     const belt =
@@ -190,7 +198,7 @@ export default function GradingDashboard({
       search,
       beltFilter: belt,
       stripeFilters,
-      viewMode,
+      viewMode: catViewMode,
       category: cat,
     });
   }
@@ -205,7 +213,7 @@ export default function GradingDashboard({
     search,
     beltFilter,
     stripeFilters,
-    viewMode,
+    effectiveViewMode,
     excluded,
   ]);
 
@@ -237,16 +245,17 @@ export default function GradingDashboard({
 
   const hiddenCountForTab = excluded[category].length;
 
-  const groupOptions = viewMode === "grading" ? { groupByGrading: true } : {};
+  const groupOptions =
+    effectiveViewMode === "grading" ? { groupByGrading: true } : {};
 
   const grouped = useMemo(
     () => groupByBelt(filteredStudents, category, sortBy, groupOptions),
-    [filteredStudents, category, sortBy, viewMode]
+    [filteredStudents, category, sortBy, effectiveViewMode]
   );
 
   const summaryCounts = useMemo(
-    () => beltCounts(filteredStudents, category, viewMode),
-    [filteredStudents, category, viewMode]
+    () => beltCounts(filteredStudents, category, effectiveViewMode),
+    [filteredStudents, category, effectiveViewMode]
   );
 
   const hasAnyData = adults.students.length > 0 || kids.students.length > 0;
@@ -279,6 +288,7 @@ export default function GradingDashboard({
       filename: `bjj-grading-${category}-filtered.pdf`,
       gradingDate: dates.gradingDate,
       ceremonyDate: dates.ceremonyDate,
+      groupByGrading: effectiveViewMode === "grading",
     });
   }
 
@@ -287,6 +297,7 @@ export default function GradingDashboard({
       adults: adultsFiltered,
       kids: kidsFiltered,
       eventDates,
+      groupAdultsByGrading: viewMode === "grading",
     });
   }
 
@@ -499,18 +510,20 @@ export default function GradingDashboard({
 
               <EventDatesFields dates={eventDates} onChange={setEventDates} />
 
-              <select
-                value={viewMode}
-                onChange={(e) => {
-                  setViewMode(e.target.value);
-                  setBeltFilter("all");
-                }}
-                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
-                aria-label="View mode"
-              >
-                <option value="grading">View by grading belt (next colour)</option>
-                <option value="current">View by current belt</option>
-              </select>
+              {gradingViewEnabled && (
+                <select
+                  value={viewMode}
+                  onChange={(e) => {
+                    setViewMode(e.target.value);
+                    setBeltFilter("all");
+                  }}
+                  className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
+                  aria-label="View mode"
+                >
+                  <option value="current">View by current belt</option>
+                  <option value="grading">View by grading belt (next colour)</option>
+                </select>
+              )}
               <select
                 value={effectiveBeltFilter}
                 onChange={(e) => setBeltFilter(e.target.value)}
@@ -518,7 +531,7 @@ export default function GradingDashboard({
                 aria-label="Filter by belt colour"
               >
                 <option value="all">
-                  {viewMode === "grading"
+                  {effectiveViewMode === "grading"
                     ? "All grading belts"
                     : "All belt colours"}
                 </option>
@@ -545,7 +558,10 @@ export default function GradingDashboard({
                 <option value="date">Sort by promotion date</option>
                 <option value="name">Sort by name</option>
               </select>
-              {!readOnly && dataSource === "clubworx" && onGradingOverridesChange && (
+              {!readOnly &&
+                gradingViewEnabled &&
+                dataSource === "clubworx" &&
+                onGradingOverridesChange && (
                 <>
                   <button
                     type="button"
@@ -661,7 +677,7 @@ export default function GradingDashboard({
 
               <section className="space-y-4">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                  {viewMode === "grading"
+                  {effectiveViewMode === "grading"
                     ? "Students by grading belt"
                     : "Students by belt"}
                 </h2>
@@ -685,7 +701,9 @@ export default function GradingDashboard({
                           : undefined
                     }
                     onGradingBeltChange={
-                      readOnly || !onGradingOverridesChange
+                      readOnly ||
+                      !gradingViewEnabled ||
+                      !onGradingOverridesChange
                         ? undefined
                         : handleGradingBeltChange
                     }
