@@ -1,7 +1,10 @@
 "use client";
 
+import { baseGiSizePresets } from "@/lib/giSizes";
+
 /**
  * @param {{
+ *   category?: 'adults'|'kids',
  *   options: string[],
  *   value: string,
  *   disabled?: boolean,
@@ -10,6 +13,7 @@
  * }} props
  */
 export default function GiSizeSelect({
+  category = "adults",
   options,
   value,
   disabled,
@@ -17,7 +21,8 @@ export default function GiSizeSelect({
   onSave,
 }) {
   const current = (value || "").trim();
-  const optionList = [...options];
+  const optionList =
+    options.length > 0 ? [...options] : [...baseGiSizePresets(category)];
   if (current && !optionList.some((o) => o.toLowerCase() === current.toLowerCase())) {
     optionList.unshift(current);
   }
@@ -27,7 +32,7 @@ export default function GiSizeSelect({
       value={current}
       onChange={(e) => {
         const next = e.target.value;
-        if (next !== current) onSave(next);
+        onSave(next);
       }}
       disabled={disabled || saving}
       className="w-full min-w-[5.5rem] max-w-[7rem] rounded border border-zinc-300 bg-white px-2 py-1.5 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 disabled:opacity-50"

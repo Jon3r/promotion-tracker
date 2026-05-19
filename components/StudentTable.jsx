@@ -9,6 +9,11 @@ import GradingBeltSelect from "./GradingBeltSelect";
 
 const HIGHLIGHT_DAYS = 14;
 
+/** @param {import('@/lib/parseExcel').Student} student */
+function savingGiSizeKey(student) {
+  return student.contactKey || student.memberStyleId || student.fullName;
+}
+
 function beltOptionsForCategory(category) {
   return category === "kids" ? KIDS_BELT_ORDER : ADULT_BELT_ORDER;
 }
@@ -57,13 +62,14 @@ function StudentCard({
         </dd>
         <dt className="text-zinc-500">Gi size</dt>
         <dd className="text-zinc-700">
-          {readOnly || !onGiSizeSave || !student.memberStyleId ? (
+          {readOnly || !onGiSizeSave || !student.contactKey ? (
             student.beltSize || "—"
           ) : (
             <GiSizeSelect
+              category={category}
               options={giSizeOptions}
               value={student.beltSize}
-              saving={savingGiSizeId === student.memberStyleId}
+              saving={savingGiSizeKey(student) === savingGiSizeId}
               onSave={(size) => onGiSizeSave(student, size)}
             />
           )}
@@ -201,13 +207,14 @@ export default function StudentTable({
                     </span>
                   </td>
                   <td className="px-3 py-2 align-middle">
-                    {readOnly || !onGiSizeSave || !student.memberStyleId ? (
+                    {readOnly || !onGiSizeSave || !student.contactKey ? (
                       <span className="text-zinc-600">{student.beltSize || "—"}</span>
                     ) : (
                       <GiSizeSelect
+                        category={category}
                         options={giSizeOptions}
                         value={student.beltSize}
-                        saving={savingGiSizeId === student.memberStyleId}
+                        saving={savingGiSizeKey(student) === savingGiSizeId}
                         onSave={(size) => onGiSizeSave(student, size)}
                       />
                     )}

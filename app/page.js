@@ -317,14 +317,15 @@ export default function Home() {
         gradingOverrides={gradingOverrides}
         onGradingOverridesChange={setGradingOverrides}
         onGiSizeSave={async (cat, student, beltSize) => {
-          if (!student.memberStyleId) {
-            return { ok: false, error: "Missing ClubWorx member style id" };
-          }
           if (!student.contactKey) {
-            return { ok: false, error: "Missing ClubWorx contact key" };
+            return {
+              ok: false,
+              error:
+                "Missing ClubWorx contact key — use Sync from ClubWorx to refresh the roster.",
+            };
           }
           const result = await updateStudentGiSize({
-            memberStyleId: student.memberStyleId,
+            memberStyleId: student.memberStyleId ?? null,
             category: cat,
             contactKey: student.contactKey,
             beltSize,
@@ -335,7 +336,6 @@ export default function Home() {
             setDataset((prev) => ({
               ...prev,
               students: prev.students.map((s) =>
-                s.memberStyleId === student.memberStyleId ||
                 s.contactKey === student.contactKey
                   ? { ...s, beltSize }
                   : s

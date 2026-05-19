@@ -91,15 +91,17 @@ export default function GradingDashboard({
   const [moveError, setMoveError] = useState("");
 
   useEffect(() => {
-    if (readOnly || dataSource !== "clubworx") return;
+    if (readOnly) return;
     let cancelled = false;
     (async () => {
       const result = await fetchGiSizes();
-      if (cancelled || !result.ok) return;
-      setFetchedGiSizes({
-        adults: result.adults || [],
-        kids: result.kids || [],
-      });
+      if (cancelled) return;
+      if (result.ok) {
+        setFetchedGiSizes({
+          adults: result.adults || [],
+          kids: result.kids || [],
+        });
+      }
     })();
     return () => {
       cancelled = true;
@@ -238,7 +240,9 @@ export default function GradingDashboard({
     () =>
       buildGiSizeOptions(
         category,
-        fetchedGiSizes[category] || [],
+        fetchedGiSizes[category]?.length
+          ? fetchedGiSizes[category]
+          : [],
         dataset.students
       ),
     [category, fetchedGiSizes, dataset.students]
@@ -283,15 +287,13 @@ export default function GradingDashboard({
 
   async function handleGiSizeSave(student, beltSize) {
     if (!onGiSizeSave) return;
-    if (!student.memberStyleId) {
-      alert("This member is missing a ClubWorx style id — sync from ClubWorx again.");
-      return;
-    }
     if (!student.contactKey) {
-      alert("This member is missing a contact key — sync from ClubWorx again.");
+      alert("This member has no ClubWorx contact key — use Sync from ClubWorx to refresh the roster.");
       return;
     }
-    setSavingGiSizeId(student.memberStyleId);
+    const saveKey =
+      student.contactKey || student.memberStyleId || student.fullName;
+    setSavingGiSizeId(saveKey);
     const result = await onGiSizeSave(category, student, beltSize);
     setSavingGiSizeId(null);
     if (!result.ok) {
@@ -654,7 +656,11 @@ export default function GradingDashboard({
                       excludeStudent(category, student)
                     }
                     onGiSizeSave={
-                      readOnly || !onGiSizeSave ? undefined : handleGiSizeSave
+                      readOnly || !onGiSizeSave
+                        ? undefined
+                        : dataSource === "clubworx"
+                          ? handleGiSizeSave
+                          : undefined
                     }
                     onGradingBeltChange={
                       readOnly || !onGradingOverridesChange

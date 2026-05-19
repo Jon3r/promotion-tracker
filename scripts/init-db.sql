@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS roster_overrides (
   PRIMARY KEY (contact_key, category)
 );
 
--- Existing databases: ALTER TABLE roster_overrides ADD COLUMN IF NOT EXISTS gi_size TEXT;
+-- If roster_overrides already exists WITHOUT gi_size, run only:
+--   ALTER TABLE roster_overrides ADD COLUMN IF NOT EXISTS gi_size TEXT;
 
 CREATE INDEX IF NOT EXISTS roster_overrides_category_idx ON roster_overrides (category);
