@@ -29,8 +29,11 @@ CREATE TABLE IF NOT EXISTS roster_overrides (
   contact_key TEXT NOT NULL,
   category TEXT NOT NULL,
   grading_belt TEXT,
+  gi_size TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (contact_key, category)
 );
+
+-- Existing databases: ALTER TABLE roster_overrides ADD COLUMN IF NOT EXISTS gi_size TEXT;
 
 CREATE INDEX IF NOT EXISTS roster_overrides_category_idx ON roster_overrides (category);

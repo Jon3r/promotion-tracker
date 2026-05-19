@@ -11,6 +11,8 @@ import {
   fetchGradingOverrides,
   updateStudentGiSize,
 } from "@/lib/rosterClient";
+import { loadLocalGiSizeOverrides } from "@/lib/giSizeOverridesLocal";
+import { applyGiSizeOverrides } from "@/lib/applyGiSizeOverrides";
 import { formatDate, parseDate } from "@/lib/dates";
 import GradingDashboard from "@/components/GradingDashboard";
 import SharePanel from "@/components/SharePanel";
@@ -24,12 +26,12 @@ const emptyDataset = () => ({
   duplicatesRemoved: 0,
 });
 
-function normalizeLoaded(loaded) {
+function normalizeLoaded(loaded, giOverrides = {}) {
   const { students, duplicatesRemoved } = deduplicateStudents(
     loaded.students || []
   );
   return {
-    students,
+    students: applyGiSizeOverrides(students, giOverrides),
     fileName: loaded.fileName,
     error: null,
     savedAt: loaded.savedAt ?? null,
@@ -37,10 +39,10 @@ function normalizeLoaded(loaded) {
   };
 }
 
-function rosterFromApiPayload(remote) {
+function rosterFromApiPayload(remote, giLocal = loadLocalGiSizeOverrides()) {
   return {
-    adults: normalizeLoaded(deserializeDataset(remote.adults)),
-    kids: normalizeLoaded(deserializeDataset(remote.kids)),
+    adults: normalizeLoaded(deserializeDataset(remote.adults), giLocal.adults),
+    kids: normalizeLoaded(deserializeDataset(remote.kids), giLocal.kids),
   };
 }
 
@@ -317,6 +319,9 @@ export default function Home() {
         onGiSizeSave={async (cat, student, beltSize) => {
           if (!student.memberStyleId) {
             return { ok: false, error: "Missing ClubWorx member style id" };
+          }
+          if (!student.contactKey) {
+            return { ok: false, error: "Missing ClubWorx contact key" };
           }
           const result = await updateStudentGiSize({
             memberStyleId: student.memberStyleId,

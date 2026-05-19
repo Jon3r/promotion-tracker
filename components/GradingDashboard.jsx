@@ -282,12 +282,24 @@ export default function GradingDashboard({
   }
 
   async function handleGiSizeSave(student, beltSize) {
-    if (!onGiSizeSave || !student.memberStyleId) return;
+    if (!onGiSizeSave) return;
+    if (!student.memberStyleId) {
+      alert("This member is missing a ClubWorx style id — sync from ClubWorx again.");
+      return;
+    }
+    if (!student.contactKey) {
+      alert("This member is missing a contact key — sync from ClubWorx again.");
+      return;
+    }
     setSavingGiSizeId(student.memberStyleId);
     const result = await onGiSizeSave(category, student, beltSize);
     setSavingGiSizeId(null);
     if (!result.ok) {
       alert(result.error || "Could not save Gi size");
+      return;
+    }
+    if (result.warning) {
+      setMoveMessage(result.warning);
     }
   }
 
