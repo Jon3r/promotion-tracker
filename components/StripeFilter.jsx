@@ -32,7 +32,7 @@ export default function StripeFilter({
   }
 
   return (
-    <fieldset className="min-w-0 w-full rounded-lg border border-zinc-300 bg-white px-2 py-2 sm:col-span-2">
+    <fieldset className="min-w-0 w-full rounded-lg border border-zinc-300 bg-white px-2 py-2 sm:col-span-2 lg:col-span-3">
       <legend className="px-1 text-xs font-medium text-zinc-500">
         Stripes
         {selected.length > 0 && (

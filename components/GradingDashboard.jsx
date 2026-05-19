@@ -37,6 +37,12 @@ import CategoryTabs from "@/components/CategoryTabs";
 import BeltSummary from "@/components/BeltSummary";
 import BeltSection from "@/components/BeltSection";
 import StripeFilter from "@/components/StripeFilter";
+import EventDatesFields from "@/components/EventDatesFields";
+import {
+  loadEventDates,
+  saveEventDates,
+  eventDatesForCategory,
+} from "@/lib/eventDates";
 
 /**
  * @param {object} props
@@ -89,6 +95,15 @@ export default function GradingDashboard({
   const [fetchedGiSizes, setFetchedGiSizes] = useState({ adults: [], kids: [] });
   const [moveMessage, setMoveMessage] = useState("");
   const [moveError, setMoveError] = useState("");
+  const [eventDates, setEventDates] = useState(loadEventDates);
+
+  useEffect(() => {
+    setEventDates(loadEventDates());
+  }, []);
+
+  useEffect(() => {
+    saveEventDates(eventDates);
+  }, [eventDates]);
 
   useEffect(() => {
     if (readOnly) return;
@@ -258,9 +273,12 @@ export default function GradingDashboard({
   }, [adults.savedAt, kids.savedAt]);
 
   async function handleExportCurrentTab() {
+    const dates = eventDatesForCategory(eventDates, category);
     await exportNamesPdf(filteredStudents, {
       category,
       filename: `bjj-grading-${category}-filtered.pdf`,
+      gradingDate: dates.gradingDate,
+      ceremonyDate: dates.ceremonyDate,
     });
   }
 
@@ -268,6 +286,7 @@ export default function GradingDashboard({
     await exportBothCategoriesPdf({
       adults: adultsFiltered,
       kids: kidsFiltered,
+      eventDates,
     });
   }
 
@@ -469,21 +488,24 @@ export default function GradingDashboard({
               kidsCount={kids.students.length}
             />
 
-            <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <input
                 type="search"
                 placeholder="Search by name, email, rank…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:col-span-2"
+                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:col-span-2 lg:col-span-3"
               />
+
+              <EventDatesFields dates={eventDates} onChange={setEventDates} />
+
               <select
                 value={viewMode}
                 onChange={(e) => {
                   setViewMode(e.target.value);
                   setBeltFilter("all");
                 }}
-                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2"
+                className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
                 aria-label="View mode"
               >
                 <option value="grading">View by grading belt (next colour)</option>
@@ -529,14 +551,14 @@ export default function GradingDashboard({
                     type="button"
                     onClick={handleBulkMoveGrading}
                     disabled={filteredStudents.length === 0}
-                    className="w-full rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-900 hover:bg-blue-100 disabled:opacity-50 sm:col-span-2"
+                    className="w-full rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-900 hover:bg-blue-100 disabled:opacity-50 lg:col-span-3"
                   >
                     Move filtered to next belt grading
                   </button>
                   <button
                     type="button"
                     onClick={handleResetGradingMoves}
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 sm:col-span-2"
+                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 lg:col-span-3"
                   >
                     Reset grading moves ({category})
                   </button>
@@ -546,7 +568,7 @@ export default function GradingDashboard({
                 type="button"
                 onClick={handleExportCurrentTab}
                 disabled={filteredStudents.length === 0}
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50 sm:col-span-2"
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
               >
                 Export names PDF ({category})
               </button>
@@ -573,7 +595,7 @@ export default function GradingDashboard({
                   disabled={
                     adultsFiltered.length === 0 && kidsFiltered.length === 0
                   }
-                  className="w-full rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 sm:col-span-2"
+                  className="w-full rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 lg:col-span-3"
                 >
                   Export PDF (both)
                 </button>
