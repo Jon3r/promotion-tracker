@@ -20,7 +20,7 @@ export default function FileUpload({
           id={inputId}
           type="file"
           accept=".xlsx,.xls"
-          className="mt-3 block w-full text-sm text-zinc-600 file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-700"
+          className="mt-3 block w-full text-sm text-zinc-600 file:mr-4 file:rounded-lg file:border-0 file:bg-brand-blue file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-brand-blue-hover"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) onFile(file);

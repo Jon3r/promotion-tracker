@@ -17,6 +17,7 @@ import { formatDate, parseDate } from "@/lib/dates";
 import GradingDashboard from "@/components/GradingDashboard";
 import SharePanel from "@/components/SharePanel";
 import PageHeader from "@/components/PageHeader";
+import Button from "@/components/Button";
 
 const emptyDataset = () => ({
   students: [],
@@ -264,14 +265,14 @@ export default function Home() {
             Pull the latest belt ranks for all active members into the Adults and
             Kids rosters.
           </p>
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={() => runClubWorxSync()}
             disabled={clubworxSyncing || cloudStatus === "loading"}
-            className="mt-4 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 sm:w-auto"
+            className="mt-4 w-full py-2.5 sm:w-auto"
           >
             {clubworxSyncing ? "Syncing from ClubWorx…" : "Sync from ClubWorx"}
-          </button>
+          </Button>
           {clubworxMessage && (
             <p className="mt-2 text-sm text-green-800">{clubworxMessage}</p>
           )}

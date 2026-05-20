@@ -15,8 +15,8 @@ export default function CategoryTabs({ active, onChange, adultsCount, kidsCount 
           onClick={() => onChange(tab.id)}
           className={`min-w-0 flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
             active === tab.id
-              ? "bg-white text-zinc-900 shadow-sm"
-              : "text-zinc-600 hover:text-zinc-900"
+              ? "bg-white text-brand-blue shadow-sm"
+              : "text-zinc-600 hover:text-brand-blue"
           }`}
         >
           {tab.label}

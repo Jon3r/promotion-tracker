@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { serializeDataset } from "@/lib/datasetSerialize";
+import Button from "@/components/Button";
 
 export default function SharePanel({
   adults,
@@ -78,14 +79,14 @@ export default function SharePanel({
             autoComplete="off"
           />
         </label>
-        <button
-          type="button"
+        <Button
+          variant="primary"
           onClick={publish}
           disabled={disabled || loading}
-          className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 sm:w-auto"
+          className="w-full sm:w-auto"
         >
           {loading ? "Publishing…" : "Create share link"}
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -100,13 +101,13 @@ export default function SharePanel({
             Share this link
           </p>
           <p className="mt-1 break-all text-sm text-zinc-800">{shareUrl}</p>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={copyLink}
-            className="mt-2 text-sm font-medium text-blue-600 hover:underline"
+            className="mt-2 px-3 py-1.5"
           >
             {copied ? "Copied!" : "Copy link"}
-          </button>
+          </Button>
         </div>
       )}
     </section>

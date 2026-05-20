@@ -23,8 +23,8 @@ export default function StripeFilter({
   const chipClass = (active) =>
     `rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
       active
-        ? "border-zinc-900 bg-zinc-900 text-white"
-        : "border-zinc-300 bg-white text-zinc-700 hover:border-zinc-400"
+        ? "border-brand-gold bg-brand-gold text-brand-blue"
+        : "border-zinc-300 bg-white text-zinc-700 hover:border-brand-blue/40"
     }`;
 
   if (!stripes.length && !hasUnspecified) {
