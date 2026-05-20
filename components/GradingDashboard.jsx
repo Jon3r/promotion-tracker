@@ -288,7 +288,6 @@ export default function GradingDashboard({
       filename: `bjj-grading-${category}-filtered.pdf`,
       gradingDate: dates.gradingDate,
       ceremonyDate: dates.ceremonyDate,
-      groupByGrading: effectiveViewMode === "grading",
     });
   }
 
@@ -297,7 +296,6 @@ export default function GradingDashboard({
       adults: adultsFiltered,
       kids: kidsFiltered,
       eventDates,
-      groupAdultsByGrading: viewMode === "grading",
     });
   }
 
