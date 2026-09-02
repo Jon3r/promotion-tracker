@@ -296,6 +296,12 @@ export default function GradingDashboard({
   async function handleExportReadyToPromote() {
     const dates = eventDatesForCategory(eventDates, category);
     const readyStudents = filteredStudents.filter(isReadyToPromote);
+    if (!readyStudents.length) {
+      alert(
+        `No ${category} students are marked ready to promote in the current filters.`
+      );
+      return;
+    }
     await exportNamesPdf(readyStudents, {
       category,
       filename: `bjj-grading-${category}-ready-to-promote.pdf`,
@@ -602,7 +608,7 @@ export default function GradingDashboard({
               <Button
                 variant="secondary"
                 onClick={handleExportReadyToPromote}
-                disabled={!filteredStudents.some(isReadyToPromote)}
+                disabled={filteredStudents.length === 0}
                 className="w-full"
               >
                 Export ready-to-promote PDF ({category})
