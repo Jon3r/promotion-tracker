@@ -211,6 +211,18 @@ export default function GradingDashboard({
   const dataset = category === "adults" ? adults : kids;
   const gradingViewEnabled = supportsGradingBeltView(category);
   const effectiveViewMode = gradingViewEnabled ? viewMode : "current";
+  const classOptionsForCategory = useMemo(
+    () =>
+      classOptions.filter((event) =>
+        category === "kids" ? event.audience === "kids" : event.audience !== "kids"
+      ),
+    [classOptions, category]
+  );
+  const effectiveSelectedClassId = classOptionsForCategory.some(
+    (event) => event.id === selectedClassId
+  )
+    ? selectedClassId
+    : "";
 
   const studentsWithOverrides = useMemo(() => {
     const list = dataset.students;
@@ -248,7 +260,7 @@ export default function GradingDashboard({
       : students;
     const classScoped =
       reportScope === "class"
-        ? selectedClassId
+        ? effectiveSelectedClassId
           ? merged.filter((s) => {
               const key = String(s.contactKey || "").trim();
               return key && classAttendeeKeys.has(key);
@@ -284,7 +296,7 @@ export default function GradingDashboard({
     effectiveViewMode,
     excluded,
     reportScope,
-    selectedClassId,
+    effectiveSelectedClassId,
     classAttendeeKeys,
   ]);
 
@@ -300,7 +312,7 @@ export default function GradingDashboard({
     viewMode,
     excluded.adults,
     reportScope,
-    selectedClassId,
+    effectiveSelectedClassId,
     classAttendeeKeys,
   ]);
 
@@ -316,7 +328,7 @@ export default function GradingDashboard({
     viewMode,
     excluded.kids,
     reportScope,
-    selectedClassId,
+    effectiveSelectedClassId,
     classAttendeeKeys,
   ]);
 
@@ -635,25 +647,27 @@ export default function GradingDashboard({
                   </div>
                   {isClassPromotionsTab && (
                     <select
-                      value={selectedClassId}
+                      value={effectiveSelectedClassId}
                       onChange={(e) => setSelectedClassId(e.target.value)}
-                      disabled={classLoading || classOptions.length === 0}
+                      disabled={classLoading || classOptionsForCategory.length === 0}
                       className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
                       aria-label="Select class"
                     >
                       <option value="">
                         {classLoading
                           ? "Loading ClubWorx classes…"
-                          : "Select a class from schedule"}
+                          : classOptionsForCategory.length
+                            ? "Select a class from schedule"
+                            : `No ${category} classes found this week`}
                       </option>
-                      {classOptions.map((event) => (
+                      {classOptionsForCategory.map((event) => (
                         <option key={event.id} value={event.id}>
-                          {event.title} · {event.startsAtLabel}
+                          {event.title} · {event.organisation} · {event.startsAtLabel}
                         </option>
                       ))}
                     </select>
                   )}
-                  {isClassPromotionsTab && selectedClassId && (
+                  {isClassPromotionsTab && effectiveSelectedClassId && (
                     <p className="text-xs text-zinc-500 sm:col-span-2 lg:col-span-3">
                       Class filter active: {classAttendeeKeys.size} attendee
                       {classAttendeeKeys.size === 1 ? "" : "s"} from the selected
