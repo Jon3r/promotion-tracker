@@ -107,6 +107,7 @@ export default function GradingDashboard({
   const [classAttendeeKeys, setClassAttendeeKeys] = useState(new Set());
   const [classLoading, setClassLoading] = useState(false);
   const [classError, setClassError] = useState("");
+  const isClassPromotionsTab = reportScope === "class";
 
   useEffect(() => {
     setEventDates(loadEventDates());
@@ -600,22 +601,39 @@ export default function GradingDashboard({
               />
               {!readOnly && dataSource === "clubworx" && (
                 <>
-                  <select
-                    value={reportScope}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      setReportScope(next);
-                      if (next !== "class") {
-                        setSelectedClassId("");
-                      }
-                    }}
-                    className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
-                    aria-label="Report scope"
-                  >
-                    <option value="all">Report scope: All members</option>
-                    <option value="class">Report scope: Selected class</option>
-                  </select>
-                  {reportScope === "class" && (
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      Promotions scope
+                    </p>
+                    <div className="flex w-full min-w-0 gap-1 rounded-lg bg-zinc-100 p-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReportScope("all");
+                          setSelectedClassId("");
+                        }}
+                        className={`min-w-0 flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                          !isClassPromotionsTab
+                            ? "bg-white text-brand-blue shadow-sm ring-1 ring-zinc-200/90"
+                            : "text-zinc-600 hover:bg-white/70"
+                        }`}
+                      >
+                        All promotions
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReportScope("class")}
+                        className={`min-w-0 flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                          isClassPromotionsTab
+                            ? "bg-white text-brand-blue shadow-sm ring-1 ring-zinc-200/90"
+                            : "text-zinc-600 hover:bg-white/70"
+                        }`}
+                      >
+                        Class promotions
+                      </button>
+                    </div>
+                  </div>
+                  {isClassPromotionsTab && (
                     <select
                       value={selectedClassId}
                       onChange={(e) => setSelectedClassId(e.target.value)}
@@ -635,7 +653,7 @@ export default function GradingDashboard({
                       ))}
                     </select>
                   )}
-                  {reportScope === "class" && selectedClassId && (
+                  {isClassPromotionsTab && selectedClassId && (
                     <p className="text-xs text-zinc-500 sm:col-span-2 lg:col-span-3">
                       Class filter active: {classAttendeeKeys.size} attendee
                       {classAttendeeKeys.size === 1 ? "" : "s"} from the selected
