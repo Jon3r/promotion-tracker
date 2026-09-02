@@ -4,10 +4,25 @@ import {
   isClubWorxConfigured,
 } from "@/lib/clubworx/client.server";
 import {
-  buildClubWorxScheduleWindowParams,
+  buildClubWorxScheduleWindowParamCandidates,
   normaliseClubWorxClassFromBooking,
   normaliseClubWorxEvent,
 } from "@/lib/clubworx/classes";
+
+async function fetchClubWorxPagesWithParamCandidates(endpoint, candidates) {
+  const errors = [];
+  for (const params of candidates) {
+    try {
+      const rows = await fetchAllClubWorxPages(endpoint, params);
+      return { ok: true, rows, params };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown ClubWorx error";
+      errors.push(message);
+    }
+  }
+  return { ok: false, rows: [], params: null, errors };
+}
 
 export async function GET() {
   if (!isClubWorxConfigured()) {
@@ -18,12 +33,29 @@ export async function GET() {
   }
 
   try {
-    const windowParams = buildClubWorxScheduleWindowParams();
-    const events = await fetchAllClubWorxPages("events", windowParams);
-    let classes = events.map(normaliseClubWorxEvent).filter((event) => event.id);
+    const windowCandidates = buildClubWorxScheduleWindowParamCandidates();
+    const eventsResult = await fetchClubWorxPagesWithParamCandidates(
+      "events",
+      windowCandidates
+    );
+    let classes = eventsResult.rows
+      .map(normaliseClubWorxEvent)
+      .filter((event) => event.id);
 
     if (!classes.length) {
-      const bookings = await fetchAllClubWorxPages("bookings", windowParams);
+      const bookingsResult = await fetchClubWorxPagesWithParamCandidates(
+        "bookings",
+        windowCandidates
+      );
+      if (!bookingsResult.ok) {
+        const details = [...(eventsResult.errors || []), ...(bookingsResult.errors || [])]
+          .filter(Boolean)
+          .join(" | ");
+        throw new Error(
+          details || "Could not load class schedule from ClubWorx events or bookings"
+        );
+      }
+      const bookings = bookingsResult.rows;
       const byId = new Map();
       for (const booking of bookings) {
         const normalized = normaliseClubWorxClassFromBooking(booking);
