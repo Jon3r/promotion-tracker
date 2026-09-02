@@ -23,6 +23,11 @@ function isUpcoming(student) {
   return until != null && until >= 0 && until <= HIGHLIGHT_DAYS;
 }
 
+function isReadyToPromote(student) {
+  if (student.readyToPromote === true) return true;
+  return /ready to promote/i.test(String(student.nextRank || ""));
+}
+
 function StudentCard({
   student,
   category,
@@ -35,6 +40,7 @@ function StudentCard({
   savingGradingKey,
 }) {
   const highlight = isUpcoming(student);
+  const readyToPromote = isReadyToPromote(student);
 
   return (
     <li
@@ -46,6 +52,11 @@ function StudentCard({
         <p className="min-w-0 flex-1 font-medium text-zinc-900">
           {student.fullName}
         </p>
+        {readyToPromote && (
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+            Ready to promote
+          </span>
+        )}
         {onExclude && (
           <ExcludeStudentButton
             onClick={() => onExclude(student)}
@@ -181,6 +192,7 @@ export default function StudentTable({
           <tbody className="divide-y divide-zinc-100 bg-white">
             {students.map((student) => {
               const highlight = isUpcoming(student);
+              const readyToPromote = isReadyToPromote(student);
 
               return (
                 <tr
@@ -196,7 +208,14 @@ export default function StudentTable({
                     </td>
                   )}
                   <td className="px-3 py-2 font-medium text-zinc-900">
-                    <span className="line-clamp-2">{student.fullName}</span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="line-clamp-2">{student.fullName}</span>
+                      {readyToPromote && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+                          Ready to promote
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 py-2 text-zinc-700">
                     <span className="line-clamp-2">{student.currentRank || "—"}</span>
