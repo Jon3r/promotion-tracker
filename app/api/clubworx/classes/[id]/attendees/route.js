@@ -28,7 +28,12 @@ async function fetchBookingsForClass(eventId, day) {
       errors.push(error instanceof Error ? error.message : "Unknown ClubWorx error");
     }
   }
-  throw new Error(errors.filter(Boolean).join(" | "));
+  try {
+    return await fetchAllClubWorxPages("bookings", { event_id: eventId });
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : "Unknown ClubWorx error");
+    throw new Error(errors.filter(Boolean).join(" | "));
+  }
 }
 
 export async function GET(request, { params }) {

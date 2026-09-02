@@ -26,6 +26,21 @@ async function fetchClubWorxPagesWithParamCandidates(endpoint, candidates) {
   return { ok: false, rows: [], params: null, errors };
 }
 
+async function fetchBookingsForDay(candidates) {
+  const scoped = await fetchClubWorxPagesWithParamCandidates("bookings", candidates);
+  if (scoped.ok && scoped.rows.length) return scoped;
+
+  // Fallback for accounts where date window filters on bookings are ignored
+  // or interpreted differently; we filter by dayKey in this route after fetch.
+  try {
+    const rows = await fetchAllClubWorxPages("bookings");
+    return { ok: true, rows, params: null, fallbackUnfiltered: true, errors: scoped.errors };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown ClubWorx error";
+    return { ...scoped, errors: [...(scoped.errors || []), message] };
+  }
+}
+
 function dedupeClasses(classes) {
   const byKey = new Map();
   for (const entry of classes) {
@@ -57,10 +72,9 @@ export async function GET(request) {
     if (!windowCandidates.length) {
       return NextResponse.json({ error: "Invalid day format. Use yyyy-mm-dd." }, { status: 400 });
     }
-    const bookingsResult = await fetchClubWorxPagesWithParamCandidates(
-      "bookings",
-      windowCandidates
-    );
+    const bookingsResult = day
+      ? await fetchBookingsForDay(windowCandidates)
+      : await fetchClubWorxPagesWithParamCandidates("bookings", windowCandidates);
     let classes = [];
 
     if (bookingsResult.ok && bookingsResult.rows.length) {
