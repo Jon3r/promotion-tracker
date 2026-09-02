@@ -4,7 +4,7 @@ import {
   isClubWorxConfigured,
 } from "@/lib/clubworx/client.server";
 import {
-  buildClubWorxScheduleWindowParamCandidates,
+  buildClubWorxClassSelectorParamCandidates,
   normaliseClubWorxClassFromBooking,
   normaliseClubWorxEvent,
 } from "@/lib/clubworx/classes";
@@ -24,6 +24,21 @@ async function fetchClubWorxPagesWithParamCandidates(endpoint, candidates) {
   return { ok: false, rows: [], params: null, errors };
 }
 
+function dedupeClasses(classes) {
+  const byKey = new Map();
+  for (const entry of classes) {
+    if (!entry?.id && !entry?.title) continue;
+    const key = entry.startsAt
+      ? `${entry.title}::${entry.startsAt}`
+      : `${entry.id}::${entry.title}`;
+    const prev = byKey.get(key);
+    if (!prev || (!prev.startsAt && entry.startsAt)) {
+      byKey.set(key, entry);
+    }
+  }
+  return [...byKey.values()];
+}
+
 export async function GET() {
   if (!isClubWorxConfigured()) {
     return NextResponse.json(
@@ -33,21 +48,38 @@ export async function GET() {
   }
 
   try {
-    const windowCandidates = buildClubWorxScheduleWindowParamCandidates();
+    const windowCandidates = buildClubWorxClassSelectorParamCandidates();
+    const bookingsResult = await fetchClubWorxPagesWithParamCandidates(
+      "bookings",
+      windowCandidates
+    );
+    let classes = [];
+
+    if (bookingsResult.ok && bookingsResult.rows.length) {
+      const byId = new Map();
+      for (const booking of bookingsResult.rows) {
+        const normalized = normaliseClubWorxClassFromBooking(booking);
+        if (!normalized.id) continue;
+        const previous = byId.get(normalized.id);
+        if (!previous || (!previous.startsAt && normalized.startsAt)) {
+          byId.set(normalized.id, normalized);
+        }
+      }
+      classes = [...byId.values()];
+    }
+
     const eventsResult = await fetchClubWorxPagesWithParamCandidates(
       "events",
       windowCandidates
     );
-    let classes = eventsResult.rows
-      .map(normaliseClubWorxEvent)
-      .filter((event) => event.id);
-
     if (!classes.length) {
-      const bookingsResult = await fetchClubWorxPagesWithParamCandidates(
-        "bookings",
-        windowCandidates
-      );
-      if (!bookingsResult.ok) {
+      classes = eventsResult.rows
+        .map(normaliseClubWorxEvent)
+        .filter((event) => event.id);
+    }
+
+    if (!classes.length && !bookingsResult.ok) {
+      if (!eventsResult.ok) {
         const details = [...(eventsResult.errors || []), ...(bookingsResult.errors || [])]
           .filter(Boolean)
           .join(" | ");
@@ -55,22 +87,9 @@ export async function GET() {
           details || "Could not load class schedule from ClubWorx events or bookings"
         );
       }
-      const bookings = bookingsResult.rows;
-      const byId = new Map();
-      for (const booking of bookings) {
-        const normalized = normaliseClubWorxClassFromBooking(booking);
-        if (!normalized.id) continue;
-        const previous = byId.get(normalized.id);
-        if (!previous) {
-          byId.set(normalized.id, normalized);
-          continue;
-        }
-        if (previous.startsAt) continue;
-        byId.set(normalized.id, normalized);
-      }
-      classes = [...byId.values()];
     }
 
+    classes = dedupeClasses(classes);
     classes.sort((a, b) => {
       const at = a.startsAt ? new Date(a.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
       const bt = b.startsAt ? new Date(b.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
