@@ -2,6 +2,7 @@
 
 import { formatDate, daysUntil } from "@/lib/dates";
 import { displayNextRank } from "@/lib/gradingBelt";
+import { isReadyToPromote } from "@/lib/readyToPromote";
 import { ADULT_BELT_ORDER, KIDS_BELT_ORDER } from "@/lib/rank";
 import ExcludeStudentButton from "./ExcludeStudentButton";
 import GiSizeSelect from "./GiSizeSelect";
@@ -21,11 +22,6 @@ function beltOptionsForCategory(category) {
 function isUpcoming(student) {
   const until = daysUntil(student.promotionDate);
   return until != null && until >= 0 && until <= HIGHLIGHT_DAYS;
-}
-
-function isReadyToPromote(student) {
-  if (student.readyToPromote === true) return true;
-  return /ready to promote/i.test(String(student.nextRank || ""));
 }
 
 function StudentCard({

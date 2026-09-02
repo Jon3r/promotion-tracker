@@ -13,6 +13,7 @@ import { beltDisplayName } from "@/lib/rank";
 import { formatDate, parseDate } from "@/lib/dates";
 import { exportNamesPdf, exportBothCategoriesPdf } from "@/lib/exportPdf";
 import { exportBeltOrderPdf, exportBeltOrderCsv } from "@/lib/exportBeltOrder";
+import { isReadyToPromote } from "@/lib/readyToPromote";
 import {
   mergeGradingOverrides,
   nextBeltInSequence,
@@ -287,6 +288,17 @@ export default function GradingDashboard({
     await exportNamesPdf(filteredStudents, {
       category,
       filename: `bjj-grading-${category}-filtered.pdf`,
+      gradingDate: dates.gradingDate,
+      ceremonyDate: dates.ceremonyDate,
+    });
+  }
+
+  async function handleExportReadyToPromote() {
+    const dates = eventDatesForCategory(eventDates, category);
+    const readyStudents = filteredStudents.filter(isReadyToPromote);
+    await exportNamesPdf(readyStudents, {
+      category,
+      filename: `bjj-grading-${category}-ready-to-promote.pdf`,
       gradingDate: dates.gradingDate,
       ceremonyDate: dates.ceremonyDate,
     });
@@ -586,6 +598,14 @@ export default function GradingDashboard({
                 className="w-full"
               >
                 Export names PDF ({category})
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleExportReadyToPromote}
+                disabled={!filteredStudents.some(isReadyToPromote)}
+                className="w-full"
+              >
+                Export ready-to-promote PDF ({category})
               </Button>
               <Button
                 variant="secondary"
