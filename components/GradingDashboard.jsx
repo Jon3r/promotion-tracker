@@ -25,6 +25,8 @@ import {
   saveGradingBulkMove,
   saveStudentGradingOverride,
   fetchGiSizes,
+  fetchClubWorxClasses,
+  fetchClubWorxClassAttendees,
 } from "@/lib/rosterClient";
 import { buildGiSizeOptions } from "@/lib/giSizes";
 import {
@@ -99,6 +101,12 @@ export default function GradingDashboard({
   const [moveMessage, setMoveMessage] = useState("");
   const [moveError, setMoveError] = useState("");
   const [eventDates, setEventDates] = useState(loadEventDates);
+  const [reportScope, setReportScope] = useState("all");
+  const [classOptions, setClassOptions] = useState([]);
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [classAttendeeKeys, setClassAttendeeKeys] = useState(new Set());
+  const [classLoading, setClassLoading] = useState(false);
+  const [classError, setClassError] = useState("");
 
   useEffect(() => {
     setEventDates(loadEventDates());
@@ -125,6 +133,54 @@ export default function GradingDashboard({
       cancelled = true;
     };
   }, [readOnly, dataSource, adults.savedAt, kids.savedAt]);
+
+  useEffect(() => {
+    if (readOnly || dataSource !== "clubworx") return;
+    let cancelled = false;
+    (async () => {
+      setClassLoading(true);
+      setClassError("");
+      const result = await fetchClubWorxClasses();
+      if (cancelled) return;
+      if (!result.ok) {
+        setClassOptions([]);
+        setClassError(result.error || "Could not load ClubWorx classes");
+      } else {
+        setClassOptions(result.classes || []);
+      }
+      setClassLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [readOnly, dataSource, adults.savedAt, kids.savedAt]);
+
+  useEffect(() => {
+    if (readOnly || dataSource !== "clubworx") return;
+    let cancelled = false;
+    (async () => {
+      if (reportScope !== "class") return;
+      if (!selectedClassId) {
+        setClassAttendeeKeys(new Set());
+        setClassError("");
+        return;
+      }
+      setClassLoading(true);
+      setClassError("");
+      const result = await fetchClubWorxClassAttendees(selectedClassId);
+      if (cancelled) return;
+      if (!result.ok) {
+        setClassAttendeeKeys(new Set());
+        setClassError(result.error || "Could not load class attendees");
+      } else {
+        setClassAttendeeKeys(new Set(result.attendeeContactKeys || []));
+      }
+      setClassLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [readOnly, dataSource, reportScope, selectedClassId]);
 
   useEffect(() => {
     setExcluded(loadExcludedKeys());
@@ -189,14 +245,23 @@ export default function GradingDashboard({
     const merged = useGrading
       ? mergeGradingOverrides(students, overrides[cat] || {})
       : students;
+    const classScoped =
+      reportScope === "class"
+        ? selectedClassId
+          ? merged.filter((s) => {
+              const key = String(s.contactKey || "").trim();
+              return key && classAttendeeKeys.has(key);
+            })
+          : []
+        : merged;
     const catViewMode = useGrading ? viewMode : "current";
     const belts =
       catViewMode === "grading"
-        ? gradingBeltFilterOptions(merged, cat)
-        : beltFilterOptions(merged, cat);
+        ? gradingBeltFilterOptions(classScoped, cat)
+        : beltFilterOptions(classScoped, cat);
     const belt =
       beltFilter === "all" || belts.includes(beltFilter) ? beltFilter : "all";
-    return applyFilters(merged, {
+    return applyFilters(classScoped, {
       search,
       beltFilter: belt,
       stripeFilters,
@@ -217,6 +282,9 @@ export default function GradingDashboard({
     stripeFilters,
     effectiveViewMode,
     excluded,
+    reportScope,
+    selectedClassId,
+    classAttendeeKeys,
   ]);
 
   const adultsFiltered = useMemo(() => {
@@ -230,6 +298,9 @@ export default function GradingDashboard({
     stripeFilters,
     viewMode,
     excluded.adults,
+    reportScope,
+    selectedClassId,
+    classAttendeeKeys,
   ]);
 
   const kidsFiltered = useMemo(() => {
@@ -243,6 +314,9 @@ export default function GradingDashboard({
     stripeFilters,
     viewMode,
     excluded.kids,
+    reportScope,
+    selectedClassId,
+    classAttendeeKeys,
   ]);
 
   const hiddenCountForTab = excluded[category].length;
@@ -524,6 +598,57 @@ export default function GradingDashboard({
                 onChange={(e) => setSearch(e.target.value)}
                 className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:col-span-2 lg:col-span-3"
               />
+              {!readOnly && dataSource === "clubworx" && (
+                <>
+                  <select
+                    value={reportScope}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setReportScope(next);
+                      if (next !== "class") {
+                        setSelectedClassId("");
+                      }
+                    }}
+                    className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
+                    aria-label="Report scope"
+                  >
+                    <option value="all">Report scope: All members</option>
+                    <option value="class">Report scope: Selected class</option>
+                  </select>
+                  {reportScope === "class" && (
+                    <select
+                      value={selectedClassId}
+                      onChange={(e) => setSelectedClassId(e.target.value)}
+                      disabled={classLoading || classOptions.length === 0}
+                      className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
+                      aria-label="Select class"
+                    >
+                      <option value="">
+                        {classLoading
+                          ? "Loading ClubWorx classes…"
+                          : "Select a class from schedule"}
+                      </option>
+                      {classOptions.map((event) => (
+                        <option key={event.id} value={event.id}>
+                          {event.title} · {event.startsAtLabel}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {reportScope === "class" && selectedClassId && (
+                    <p className="text-xs text-zinc-500 sm:col-span-2 lg:col-span-3">
+                      Class filter active: {classAttendeeKeys.size} attendee
+                      {classAttendeeKeys.size === 1 ? "" : "s"} from the selected
+                      schedule class.
+                    </p>
+                  )}
+                  {classError && (
+                    <p className="text-xs text-red-600 sm:col-span-2 lg:col-span-3" role="alert">
+                      {classError}
+                    </p>
+                  )}
+                </>
+              )}
 
               <EventDatesFields dates={eventDates} onChange={setEventDates} />
 
