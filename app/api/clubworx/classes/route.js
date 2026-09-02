@@ -4,6 +4,7 @@ import {
   isClubWorxConfigured,
 } from "@/lib/clubworx/client.server";
 import {
+  buildClubWorxScheduleWindowParams,
   normaliseClubWorxClassFromBooking,
   normaliseClubWorxEvent,
 } from "@/lib/clubworx/classes";
@@ -17,11 +18,12 @@ export async function GET() {
   }
 
   try {
-    const events = await fetchAllClubWorxPages("events");
+    const windowParams = buildClubWorxScheduleWindowParams();
+    const events = await fetchAllClubWorxPages("events", windowParams);
     let classes = events.map(normaliseClubWorxEvent).filter((event) => event.id);
 
     if (!classes.length) {
-      const bookings = await fetchAllClubWorxPages("bookings");
+      const bookings = await fetchAllClubWorxPages("bookings", windowParams);
       const byId = new Map();
       for (const booking of bookings) {
         const normalized = normaliseClubWorxClassFromBooking(booking);
