@@ -4,6 +4,7 @@ import {
   isClubWorxConfigured,
 } from "@/lib/clubworx/client.server";
 import {
+  buildClubWorxDayParamCandidates,
   buildClubWorxClassSelectorParamCandidates,
   normaliseClubWorxClassFromBooking,
   normaliseClubWorxEvent,
@@ -39,7 +40,7 @@ function dedupeClasses(classes) {
   return [...byKey.values()];
 }
 
-export async function GET() {
+export async function GET(request) {
   if (!isClubWorxConfigured()) {
     return NextResponse.json(
       { error: "ClubWorx is not configured. Set CLUBWORX_ACCOUNT_KEY." },
@@ -48,7 +49,13 @@ export async function GET() {
   }
 
   try {
-    const windowCandidates = buildClubWorxClassSelectorParamCandidates();
+    const day = new URL(request.url).searchParams.get("day")?.trim() || "";
+    const windowCandidates = day
+      ? buildClubWorxDayParamCandidates(day)
+      : buildClubWorxClassSelectorParamCandidates();
+    if (!windowCandidates.length) {
+      return NextResponse.json({ error: "Invalid day format. Use yyyy-mm-dd." }, { status: 400 });
+    }
     const bookingsResult = await fetchClubWorxPagesWithParamCandidates(
       "bookings",
       windowCandidates

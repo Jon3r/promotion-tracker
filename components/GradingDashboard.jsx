@@ -104,6 +104,9 @@ export default function GradingDashboard({
   const [reportScope, setReportScope] = useState("all");
   const [classOptions, setClassOptions] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
+  const [selectedClassDay, setSelectedClassDay] = useState(
+    () => new Date().toISOString().slice(0, 10)
+  );
   const [classAttendeeKeys, setClassAttendeeKeys] = useState(new Set());
   const [classLoading, setClassLoading] = useState(false);
   const [classError, setClassError] = useState("");
@@ -136,12 +139,12 @@ export default function GradingDashboard({
   }, [readOnly, dataSource, adults.savedAt, kids.savedAt]);
 
   useEffect(() => {
-    if (readOnly || dataSource !== "clubworx") return;
+    if (readOnly || dataSource !== "clubworx" || reportScope !== "class") return;
     let cancelled = false;
     (async () => {
       setClassLoading(true);
       setClassError("");
-      const result = await fetchClubWorxClasses();
+      const result = await fetchClubWorxClasses(selectedClassDay);
       if (cancelled) return;
       if (!result.ok) {
         setClassOptions([]);
@@ -154,7 +157,7 @@ export default function GradingDashboard({
     return () => {
       cancelled = true;
     };
-  }, [readOnly, dataSource, adults.savedAt, kids.savedAt]);
+  }, [readOnly, dataSource, reportScope, selectedClassDay, adults.savedAt, kids.savedAt]);
 
   useEffect(() => {
     if (readOnly || dataSource !== "clubworx") return;
@@ -646,32 +649,49 @@ export default function GradingDashboard({
                     </div>
                   </div>
                   {isClassPromotionsTab && (
-                    <select
-                      value={effectiveSelectedClassId}
-                      onChange={(e) => setSelectedClassId(e.target.value)}
-                      disabled={classLoading || classOptionsForCategory.length === 0}
-                      className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
-                      aria-label="Select class"
-                    >
-                      <option value="">
-                        {classLoading
-                          ? "Loading ClubWorx classes…"
-                          : classOptionsForCategory.length
-                            ? "Select a class from schedule"
-                            : `No ${category} classes found this week`}
-                      </option>
-                      {classOptionsForCategory.map((event) => (
-                        <option key={event.id} value={event.id}>
-                          {event.title} · {event.organisation} · {event.startsAtLabel}
+                    <>
+                      <label className="sm:col-span-2 lg:col-span-3">
+                        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                          Class day
+                        </span>
+                        <input
+                          type="date"
+                          value={selectedClassDay}
+                          onChange={(e) => {
+                            setSelectedClassDay(e.target.value);
+                            setSelectedClassId("");
+                            setClassAttendeeKeys(new Set());
+                          }}
+                          className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none"
+                        />
+                      </label>
+                      <select
+                        value={effectiveSelectedClassId}
+                        onChange={(e) => setSelectedClassId(e.target.value)}
+                        disabled={classLoading || classOptionsForCategory.length === 0}
+                        className="min-w-0 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none sm:col-span-2 lg:col-span-3"
+                        aria-label="Select class"
+                      >
+                        <option value="">
+                          {classLoading
+                            ? "Loading ClubWorx classes…"
+                            : classOptionsForCategory.length
+                              ? "Select a class from schedule"
+                              : `No ${category} classes found for selected day`}
                         </option>
-                      ))}
-                    </select>
+                        {classOptionsForCategory.map((event) => (
+                          <option key={event.id} value={event.id}>
+                            {event.title} · {event.organisation} · {event.startsAtLabel}
+                          </option>
+                        ))}
+                      </select>
+                    </>
                   )}
                   {isClassPromotionsTab && effectiveSelectedClassId && (
                     <p className="text-xs text-zinc-500 sm:col-span-2 lg:col-span-3">
                       Class filter active: {classAttendeeKeys.size} attendee
                       {classAttendeeKeys.size === 1 ? "" : "s"} from the selected
-                      schedule class.
+                      schedule class on {selectedClassDay}.
                     </p>
                   )}
                   {classError && (
