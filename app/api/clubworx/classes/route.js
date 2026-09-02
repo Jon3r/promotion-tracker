@@ -8,6 +8,7 @@ import {
   buildClubWorxClassSelectorParamCandidates,
   normaliseClubWorxClassFromBooking,
   normaliseClubWorxEvent,
+  resolveClubWorxDayKey,
 } from "@/lib/clubworx/classes";
 
 async function fetchClubWorxPagesWithParamCandidates(endpoint, candidates) {
@@ -30,8 +31,8 @@ function dedupeClasses(classes) {
   for (const entry of classes) {
     if (!entry?.id && !entry?.title) continue;
     const key = entry.startsAt
-      ? `${entry.title}::${entry.startsAt}`
-      : `${entry.id}::${entry.title}`;
+      ? `${entry.id}::${entry.startsAt}`
+      : `${entry.id}::${entry.dayKey || ""}::${entry.title}`;
     const prev = byKey.get(key);
     if (!prev || (!prev.startsAt && entry.startsAt)) {
       byKey.set(key, entry);
@@ -65,11 +66,18 @@ export async function GET(request) {
     if (bookingsResult.ok && bookingsResult.rows.length) {
       const byId = new Map();
       for (const booking of bookingsResult.rows) {
+        if (day) {
+          const bookingDay = resolveClubWorxDayKey(booking);
+          if (bookingDay && bookingDay !== day) continue;
+        }
         const normalized = normaliseClubWorxClassFromBooking(booking);
         if (!normalized.id) continue;
-        const previous = byId.get(normalized.id);
+        const key = normalized.startsAt
+          ? `${normalized.id}::${normalized.startsAt}`
+          : `${normalized.id}::${normalized.dayKey || ""}`;
+        const previous = byId.get(key);
         if (!previous || (!previous.startsAt && normalized.startsAt)) {
-          byId.set(normalized.id, normalized);
+          byId.set(key, normalized);
         }
       }
       classes = [...byId.values()];
@@ -81,6 +89,11 @@ export async function GET(request) {
     );
     if (!classes.length) {
       classes = eventsResult.rows
+        .filter((row) => {
+          if (!day) return true;
+          const eventDay = resolveClubWorxDayKey(row);
+          return !eventDay || eventDay === day;
+        })
         .map(normaliseClubWorxEvent)
         .filter((event) => event.id);
     }

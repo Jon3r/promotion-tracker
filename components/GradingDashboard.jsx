@@ -171,7 +171,10 @@ export default function GradingDashboard({
       }
       setClassLoading(true);
       setClassError("");
-      const result = await fetchClubWorxClassAttendees(selectedClassId);
+      const result = await fetchClubWorxClassAttendees(
+        selectedClassId,
+        selectedClassDay
+      );
       if (cancelled) return;
       if (!result.ok) {
         setClassAttendeeKeys(new Set());
@@ -184,7 +187,7 @@ export default function GradingDashboard({
     return () => {
       cancelled = true;
     };
-  }, [readOnly, dataSource, reportScope, selectedClassId]);
+  }, [readOnly, dataSource, reportScope, selectedClassId, selectedClassDay]);
 
   useEffect(() => {
     setExcluded(loadExcludedKeys());

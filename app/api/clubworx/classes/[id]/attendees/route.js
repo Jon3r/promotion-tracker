@@ -3,9 +3,35 @@ import {
   fetchAllClubWorxPages,
   isClubWorxConfigured,
 } from "@/lib/clubworx/client.server";
-import { bookingContactKey } from "@/lib/clubworx/classes";
+import {
+  bookingContactKey,
+  buildClubWorxDayParamCandidates,
+  resolveClubWorxDayKey,
+} from "@/lib/clubworx/classes";
 
-export async function GET(_request, { params }) {
+async function fetchBookingsForClass(eventId, day) {
+  if (!day) {
+    return fetchAllClubWorxPages("bookings", { event_id: eventId });
+  }
+  const candidates = buildClubWorxDayParamCandidates(day);
+  if (!candidates.length) {
+    throw new Error("Invalid day format. Use yyyy-mm-dd.");
+  }
+  const errors = [];
+  for (const candidate of candidates) {
+    try {
+      return await fetchAllClubWorxPages("bookings", {
+        event_id: eventId,
+        ...candidate,
+      });
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "Unknown ClubWorx error");
+    }
+  }
+  throw new Error(errors.filter(Boolean).join(" | "));
+}
+
+export async function GET(request, { params }) {
   if (!isClubWorxConfigured()) {
     return NextResponse.json(
       { error: "ClubWorx is not configured. Set CLUBWORX_ACCOUNT_KEY." },
@@ -20,11 +46,16 @@ export async function GET(_request, { params }) {
   }
 
   try {
-    const bookings = await fetchAllClubWorxPages("bookings", {
-      event_id: eventId,
-    });
+    const day = new URL(request.url).searchParams.get("day")?.trim() || "";
+    const bookings = await fetchBookingsForClass(eventId, day);
+    const scopedBookings = day
+      ? bookings.filter((booking) => {
+          const bookingDay = resolveClubWorxDayKey(booking);
+          return !bookingDay || bookingDay === day;
+        })
+      : bookings;
     const contactKeys = Array.from(
-      new Set(bookings.map(bookingContactKey).filter(Boolean))
+      new Set(scopedBookings.map(bookingContactKey).filter(Boolean))
     );
 
     return NextResponse.json({
