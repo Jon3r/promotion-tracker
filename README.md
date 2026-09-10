@@ -1,5 +1,8 @@
 # BJJ Grading Report
 
+Companion **Android admin app** for in-class stripe promotions: [`mobile/`](mobile/). It uses ClubWorx classes and notifies coaches when someone is due the **next stripe** (never a belt-up). See [`mobile/README.md`](mobile/README.md).
+
+
 A Next.js app for coaches to visualise student promotion data from Excel exports. Upload separate **Adults** and **Kids** spreadsheets; students are grouped by belt colour with upcoming promotion dates highlighted.
 
 Excel is parsed in the browser. The **live roster** is stored in **Vercel Postgres** so every coach sees the same data on any device.
