@@ -63,6 +63,15 @@ export async function POST(request) {
     console.error("ClubWorx sync failed:", e);
     const message =
       e instanceof Error ? e.message : "Could not sync roster from ClubWorx";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const isRateLimit =
+      /\(429\)/.test(message) || /too many requests/i.test(message);
+    return NextResponse.json(
+      {
+        error: isRateLimit
+          ? "ClubWorx is rate-limiting requests (429). Wait a minute, then try Sync once — do not click repeatedly."
+          : message,
+      },
+      { status: isRateLimit ? 429 : 500 }
+    );
   }
 }
