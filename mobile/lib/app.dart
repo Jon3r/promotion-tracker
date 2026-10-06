@@ -3,39 +3,50 @@ import 'package:flutter/material.dart';
 import 'models/models.dart';
 import 'screens/class_sheet.dart';
 import 'screens/confirm_queue_screen.dart';
+import 'screens/grading_screen.dart';
 import 'screens/sign_in_screen.dart';
 import 'screens/timetable_screen.dart';
 import 'services/backend.dart';
+import 'services/grading_api.dart';
+import 'theme/pja_theme.dart';
 
 class StripeTrackerApp extends StatelessWidget {
-  const StripeTrackerApp({super.key, required this.backend, this.demoMode = true});
+  StripeTrackerApp({
+    super.key,
+    required this.backend,
+    this.demoMode = true,
+    GradingApiClient? gradingApi,
+  }) : gradingApi = gradingApi ?? GradingApiClient();
 
   final Backend backend;
   final bool demoMode;
+  final GradingApiClient gradingApi;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFFC45C26),
-      brightness: Brightness.dark,
-    );
     return MaterialApp(
-      title: 'Stripe tracker',
-      theme: ThemeData(
-        colorScheme: scheme,
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF121212),
+      title: 'PJJA Admin',
+      theme: buildPjaTheme(),
+      home: AuthGate(
+        backend: backend,
+        demoMode: demoMode,
+        gradingApi: gradingApi,
       ),
-      home: AuthGate(backend: backend, demoMode: demoMode),
     );
   }
 }
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key, required this.backend, required this.demoMode});
+  const AuthGate({
+    super.key,
+    required this.backend,
+    required this.demoMode,
+    required this.gradingApi,
+  });
 
   final Backend backend;
   final bool demoMode;
+  final GradingApiClient gradingApi;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +58,12 @@ class AuthGate extends StatelessWidget {
         if (email == null) {
           return SignInScreen(backend: backend, demoMode: demoMode);
         }
-        return HomeShell(backend: backend, email: email, demoMode: demoMode);
+        return HomeShell(
+          backend: backend,
+          email: email,
+          demoMode: demoMode,
+          gradingApi: gradingApi,
+        );
       },
     );
   }
@@ -59,11 +75,13 @@ class HomeShell extends StatefulWidget {
     required this.backend,
     required this.email,
     required this.demoMode,
+    required this.gradingApi,
   });
 
   final Backend backend;
   final String email;
   final bool demoMode;
+  final GradingApiClient gradingApi;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -99,6 +117,7 @@ class _HomeShellState extends State<HomeShell> {
             onLinkConsumed: () => setState(() => _pendingLink = null),
           ),
           ConfirmQueueScreen(backend: widget.backend),
+          GradingScreen(api: widget.gradingApi, demoMode: widget.demoMode),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -114,6 +133,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.task_alt_outlined),
             selectedIcon: Icon(Icons.task_alt),
             label: 'Confirm',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.military_tech_outlined),
+            selectedIcon: Icon(Icons.military_tech),
+            label: 'Grading',
           ),
         ],
       ),

@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
 import { requireCoach } from "./authz";
-import { classCandidates, loadDaySchedule } from "./data";
+import { classCandidates, invalidateMemberStyles, loadDaySchedule, loadStyles } from "./data";
 import { ALLOWED_SNOOZE_DAYS, isSnoozed, type SnoozeDays } from "./eligibility/stripeDue";
 import { promoteMemberStyleRank } from "./promote";
 import { clubworxAccountKey } from "./secrets";
@@ -111,14 +111,14 @@ export const confirmPromotion = onCall(clubworxCallable, async (request) => {
   let warning: string | null = null;
 
   if (happened) {
-    const schedule = await loadDaySchedule(dayKey);
     const result = await promoteMemberStyleRank({
       memberStyleId: Number.isFinite(memberStyleId) ? memberStyleId : null,
       nextRankName,
-      styles: schedule.styles,
+      styles: await loadStyles(),
     });
     clubworxSynced = result.ok && "clubworxSynced" in result ? result.clubworxSynced : false;
     warning = "warning" in result ? result.warning ?? null : null;
+    if (clubworxSynced) invalidateMemberStyles();
   }
 
   await writeConfirmation(db, {

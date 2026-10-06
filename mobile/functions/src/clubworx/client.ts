@@ -3,10 +3,34 @@ import { clubWorxRetryDelayMs } from "./retry";
 
 const BASE_URL = "https://app.clubworx.com/api/v2";
 const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
-const DEFAULT_MAX_RETRIES = 4;
+const DEFAULT_MAX_RETRIES = 6;
+const DEFAULT_REQUEST_GAP_MS = 350;
+
+/** Serialize ClubWorx HTTP calls so pagination + parallel endpoints do not stampede the API. */
+let clubWorxQueue: Promise<unknown> = Promise.resolve();
+let lastClubWorxRequestAt = 0;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function requestGapMs(): number {
+  const raw = Number(process.env.CLUBWORX_REQUEST_GAP_MS);
+  return Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : DEFAULT_REQUEST_GAP_MS;
+}
+
+function enqueueClubWorxRequest<T>(fn: () => Promise<T>): Promise<T> {
+  const run = clubWorxQueue.then(async () => {
+    const wait = Math.max(0, requestGapMs() - (Date.now() - lastClubWorxRequestAt));
+    if (wait > 0) await sleep(wait);
+    lastClubWorxRequestAt = Date.now();
+    return fn();
+  });
+  clubWorxQueue = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run;
 }
 
 export function getClubWorxAccountKey(): string | null {
@@ -28,7 +52,7 @@ async function fetchClubWorxWithRetry(input: string, init: RequestInit): Promise
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     let res: Response;
     try {
-      res = await fetch(input, init);
+      res = await enqueueClubWorxRequest(() => fetch(input, init));
     } catch (error) {
       lastNetworkError = error;
       if (attempt === maxRetries) break;

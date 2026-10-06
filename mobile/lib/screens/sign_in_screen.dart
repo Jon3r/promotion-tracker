@@ -47,16 +47,28 @@ class _SignInScreenState extends State<SignInScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+            Center(
+              child: Image.asset(
+                'assets/images/pja-logo.png',
+                width: 128,
+                height: 128,
+                semanticLabel: 'Parramatta Jiu Jitsu Academy',
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
-              'Stripe tracker',
+              'PJJA Admin',
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
             ),
             const SizedBox(height: 8),
             Text(
               'Admin promotions for the class on the mat. Stripe-only — never the next belt.',
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -83,7 +95,9 @@ class _SignInScreenState extends State<SignInScreen> {
               decoration: InputDecoration(
                 labelText: 'Password',
                 border: const OutlineInputBorder(),
-                helperText: widget.demoMode ? 'Demo: any non-empty password' : null,
+                helperText: widget.demoMode
+                    ? 'Demo: any non-empty password (e.g. demo)'
+                    : null,
               ),
             ),
             if (_error != null) ...[

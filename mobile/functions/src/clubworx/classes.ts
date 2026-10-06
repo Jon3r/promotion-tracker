@@ -69,6 +69,7 @@ const END_KEYS = [
 export const DEFAULT_CLASS_DURATION_MS = 60 * 60 * 1000;
 export const ABOUT_TO_FINISH_MS = 10 * 60 * 1000;
 export const CONFIRM_DELAY_AFTER_END_MS = 2 * 60 * 1000;
+export const NOTIFICATION_WINDOW_AFTER_END_MS = 30 * 60 * 1000;
 
 export function resolveClubWorxStartsAt(event: Record<string, unknown>): Date | null {
   const directDateTime = parseDateish(firstValue(event, START_KEYS));
@@ -300,4 +301,13 @@ export function classHasEndedForConfirm(session: ClassSession, now: Date): boole
   if (!session.endsAt) return false;
   const end = new Date(session.endsAt).getTime();
   return now.getTime() >= end + CONFIRM_DELAY_AFTER_END_MS;
+}
+
+/** True while the poller may still need to send a push for this class. */
+export function classInNotificationWindow(session: ClassSession, now: Date): boolean {
+  if (!session.endsAt) return false;
+  const end = new Date(session.endsAt).getTime();
+  const start = session.startsAt ? new Date(session.startsAt).getTime() : end - ABOUT_TO_FINISH_MS;
+  const t = now.getTime();
+  return t >= Math.min(start, end - ABOUT_TO_FINISH_MS) && t < end + NOTIFICATION_WINDOW_AFTER_END_MS;
 }

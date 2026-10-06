@@ -8,7 +8,7 @@ void main() {
     final backend = MockBackend();
     await tester.pumpWidget(StripeTrackerApp(backend: backend, demoMode: true));
 
-    expect(find.text('Stripe tracker'), findsOneWidget);
+    expect(find.text('PJJA Admin'), findsOneWidget);
     await tester.enterText(find.byType(TextField).at(1), 'demo-password');
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
@@ -26,6 +26,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Delayed'), findsOneWidget);
     expect(find.textContaining('Sleeping until'), findsOneWidget);
+
+    expect(find.text('Confirm promotion'), findsWidgets);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Kids BJJ'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Confirm promotion').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Confirm promotion?'), findsOneWidget);
+    await tester.tap(find.text('Confirm'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ben Cole'), findsNothing);
 
     await tester.pageBack();
     await tester.pumpAndSettle();

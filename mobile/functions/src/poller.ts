@@ -1,7 +1,8 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
-import { loadDaySchedule, classCandidates } from "./data";
+import { classInNotificationWindow } from "./clubworx/classes";
+import { classCandidates, loadDayClasses, loadMemberStyles } from "./data";
 import { sendDecisions } from "./fcm";
 import { clubworxAccountKey } from "./secrets";
 import { decideNotifications } from "./scheduler";
@@ -31,11 +32,15 @@ export async function runPromotionPoll(now: Date): Promise<{ sent: number }> {
   await ensureDefaultCoach(db);
 
   const day = now.toISOString().slice(0, 10);
-  const schedule = await loadDaySchedule(day);
+  const { classes, bookings } = await loadDayClasses(day);
+  const activeClasses = classes.filter((session) => classInNotificationWindow(session, now));
+  if (!activeClasses.length) return { sent: 0 };
+
+  const memberStyles = await loadMemberStyles();
   const candidatesByClass = new Map(
-    schedule.classes.map((session) => [
+    activeClasses.map((session) => [
       session.id,
-      classCandidates(session.id, schedule.bookings, schedule.memberStyles),
+      classCandidates(session.id, bookings, memberStyles),
     ])
   );
 
@@ -48,7 +53,7 @@ export async function runPromotionPoll(now: Date): Promise<{ sent: number }> {
 
   const decisions = decideNotifications({
     now,
-    classes: schedule.classes,
+    classes: activeClasses,
     candidatesByClass,
     snoozes,
     alreadySent,

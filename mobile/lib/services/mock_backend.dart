@@ -14,6 +14,7 @@ class MockBackend implements Backend {
   final _auth = StreamController<String?>.broadcast();
   final _links = StreamController<DeepLink>.broadcast();
   final Map<String, DateTime> _snoozes = {};
+  final Set<String> _promoted = {};
   final List<ConfirmationItem> _queue = [
     ConfirmationItem(
       id: 'kids-evening_yesterday_finn',
@@ -81,6 +82,7 @@ class MockBackend implements Backend {
   Future<List<StripeCandidate>> loadClassCandidates(String eventId, String day) async {
     final now = DateTime.now().toUtc();
     return _rawCandidates(eventId)
+        .where((c) => !_promoted.contains(c.contactKey))
         .where((c) => isDueForStripe(c.currentRank, c.nextRank))
         .map((c) {
           final until = _snoozes[c.contactKey];
@@ -119,6 +121,10 @@ class MockBackend implements Backend {
           item.eventId == eventId &&
           item.dayKey == dayKey,
     );
+    if (happened) {
+      _promoted.add(contactKey);
+      _snoozes.remove(contactKey);
+    }
     return ConfirmResult(
       clubworxSynced: happened,
       warning: happened

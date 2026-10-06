@@ -69,7 +69,18 @@ class _TimetableScreenState extends State<TimetableScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Today’s classes'),
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/images/pja-logo.png',
+              width: 32,
+              height: 32,
+              semanticLabel: 'PJJA',
+            ),
+            const SizedBox(width: 10),
+            const Flexible(child: Text('Today’s classes')),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Sign out',

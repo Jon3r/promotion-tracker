@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   classHasEndedForConfirm,
+  classInNotificationWindow,
   classIsAboutToFinish,
   classIsRunning,
   inferClassAudience,
@@ -62,6 +63,13 @@ describe("class windows", () => {
   it("is ready for confirm 2 minutes after end", () => {
     expect(classHasEndedForConfirm(session, new Date("2026-09-10T09:01:00.000Z"))).toBe(false);
     expect(classHasEndedForConfirm(session, new Date("2026-09-10T09:02:00.000Z"))).toBe(true);
+  });
+
+  it("is in the notification window from start until 30 minutes after end", () => {
+    expect(classInNotificationWindow(session, new Date("2026-09-10T07:59:00.000Z"))).toBe(false);
+    expect(classInNotificationWindow(session, new Date("2026-09-10T08:00:00.000Z"))).toBe(true);
+    expect(classInNotificationWindow(session, new Date("2026-09-10T09:29:00.000Z"))).toBe(true);
+    expect(classInNotificationWindow(session, new Date("2026-09-10T09:30:00.000Z"))).toBe(false);
   });
 });
 

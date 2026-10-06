@@ -10,6 +10,7 @@ import {
   fetchClubWorxPagesWithParamCandidates,
   isClubWorxConfigured,
 } from "./clubworx/client";
+import { cached, envTtlMs, invalidateCache } from "./clubworx/cache";
 import { attachDueCounts, candidatesFromBookings } from "./clubworx/roster";
 import type { StripeCandidate } from "./eligibility/stripeDue";
 import {
@@ -38,24 +39,62 @@ function dedupeClasses(classes: ClassSession[]): ClassSession[] {
   });
 }
 
+const MEMBER_STYLES_KEY = "member_styles";
+const STYLES_KEY = "styles";
+
+export function loadMemberStyles(): Promise<Record<string, unknown>[]> {
+  if (!isClubWorxConfigured()) return Promise.resolve(MOCK_MEMBER_STYLES);
+  return cached(
+    MEMBER_STYLES_KEY,
+    envTtlMs("CLUBWORX_MEMBER_STYLES_TTL_MS", 15 * 60 * 1000),
+    () => fetchAllClubWorxPages("member_styles")
+  );
+}
+
+export function loadStyles(): Promise<unknown> {
+  if (!isClubWorxConfigured()) return Promise.resolve(MOCK_STYLES);
+  return cached(STYLES_KEY, envTtlMs("CLUBWORX_STYLES_TTL_MS", 6 * 60 * 60 * 1000), () =>
+    fetchAllClubWorxPages("styles").catch(() => [])
+  );
+}
+
+/** Call after writing a rank to ClubWorx so the next read sees it. */
+export function invalidateMemberStyles(): void {
+  invalidateCache(MEMBER_STYLES_KEY);
+}
+
+export async function loadDayClasses(day: string): Promise<{
+  classes: ClassSession[];
+  bookings: Record<string, unknown>[];
+}> {
+  if (!isClubWorxConfigured()) {
+    return { classes: mockClassesForDay(day), bookings: MOCK_BOOKINGS };
+  }
+  return cached(`day:${day}`, envTtlMs("CLUBWORX_BOOKINGS_TTL_MS", 90 * 1000), () =>
+    fetchDayClasses(day)
+  );
+}
+
 export async function loadDaySchedule(day: string): Promise<{
   classes: ClassSession[];
   bookings: Record<string, unknown>[];
   memberStyles: Record<string, unknown>[];
-  styles: unknown;
   mock: boolean;
 }> {
-  if (!isClubWorxConfigured()) {
-    const classes = mockClassesForDay(day);
-    return {
-      classes: attachDueCounts(classes, MOCK_BOOKINGS, MOCK_MEMBER_STYLES),
-      bookings: MOCK_BOOKINGS,
-      memberStyles: MOCK_MEMBER_STYLES,
-      styles: MOCK_STYLES,
-      mock: true,
-    };
-  }
+  const { classes, bookings } = await loadDayClasses(day);
+  const memberStyles = await loadMemberStyles();
+  return {
+    classes: attachDueCounts(classes, bookings, memberStyles),
+    bookings,
+    memberStyles,
+    mock: !isClubWorxConfigured(),
+  };
+}
 
+async function fetchDayClasses(day: string): Promise<{
+  classes: ClassSession[];
+  bookings: Record<string, unknown>[];
+}> {
   const candidates = buildDayParamCandidates(day);
   const bookingsResult = await fetchClubWorxPagesWithParamCandidates("bookings", candidates);
   let bookings: Record<string, unknown>[] = [];
@@ -103,18 +142,7 @@ export async function loadDaySchedule(day: string): Promise<{
     }
   }
 
-  const [memberStyles, styles] = await Promise.all([
-    fetchAllClubWorxPages("member_styles"),
-    fetchAllClubWorxPages("styles").catch(() => []),
-  ]);
-
-  return {
-    classes: attachDueCounts(dedupeClasses(classes), bookings, memberStyles),
-    bookings,
-    memberStyles,
-    styles,
-    mock: false,
-  };
+  return { classes: dedupeClasses(classes), bookings };
 }
 
 export function classCandidates(

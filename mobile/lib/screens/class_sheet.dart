@@ -48,6 +48,50 @@ class _ClassSheetState extends State<ClassSheet> {
     _reload();
   }
 
+  Future<void> _confirmPromotion(StripeCandidate candidate) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm promotion?'),
+        content: Text(
+          'Mark ${candidate.fullName} as promoted to ${candidate.nextLabel}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final result = await widget.backend.confirmPromotion(
+      contactKey: candidate.contactKey,
+      memberStyleId: candidate.memberStyleId,
+      eventId: widget.session.id,
+      dayKey: widget.day,
+      nextRank: candidate.nextRank,
+      happened: true,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.warning ??
+              (result.clubworxSynced
+                  ? '${candidate.fullName} promoted and updated in ClubWorx.'
+                  : '${candidate.fullName} marked promoted.'),
+        ),
+      ),
+    );
+    _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,6 +130,7 @@ class _ClassSheetState extends State<ClassSheet> {
                 (candidate) => _CandidateCard(
                   candidate: candidate,
                   onSnooze: (days) => _snooze(candidate, days),
+                  onConfirm: () => _confirmPromotion(candidate),
                 ),
               ),
               if (snoozed.isNotEmpty) ...[
@@ -112,10 +157,15 @@ class _ClassSheetState extends State<ClassSheet> {
 }
 
 class _CandidateCard extends StatelessWidget {
-  const _CandidateCard({required this.candidate, required this.onSnooze});
+  const _CandidateCard({
+    required this.candidate,
+    required this.onSnooze,
+    required this.onConfirm,
+  });
 
   final StripeCandidate candidate;
   final Future<void> Function(int days) onSnooze;
+  final Future<void> Function() onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -135,12 +185,17 @@ class _CandidateCard extends StatelessWidget {
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
+              runSpacing: 8,
               children: [
                 for (final days in allowedSnoozeDays)
                   OutlinedButton(
                     onPressed: () => onSnooze(days),
                     child: Text('Delay $days d'),
                   ),
+                FilledButton(
+                  onPressed: onConfirm,
+                  child: const Text('Confirm promotion'),
+                ),
               ],
             ),
           ],
