@@ -7,6 +7,7 @@ import { ADULT_BELT_ORDER, KIDS_BELT_ORDER } from "@/lib/rank";
 import ExcludeStudentButton from "./ExcludeStudentButton";
 import GiSizeSelect from "./GiSizeSelect";
 import GradingBeltSelect from "./GradingBeltSelect";
+import NextBeltListButton from "./NextBeltListButton";
 
 const HIGHLIGHT_DAYS = 14;
 
@@ -83,15 +84,25 @@ function StudentCard({
         </dd>
         {!readOnly && onGradingBeltChange && student.contactKey && (
           <>
-            <dt className="text-zinc-500">Grading belt</dt>
+            <dt className="text-zinc-500">
+              {category === "kids" ? "Next belt list" : "Grading belt"}
+            </dt>
             <dd>
-              <GradingBeltSelect
-                student={student}
-                category={category}
-                beltOptions={beltOptionsForCategory(category)}
-                saving={savingGradingKey === student.contactKey}
-                onChange={(belt) => onGradingBeltChange(student, belt)}
-              />
+              {category === "kids" ? (
+                <NextBeltListButton
+                  student={student}
+                  saving={savingGradingKey === student.contactKey}
+                  onChange={(belt) => onGradingBeltChange(student, belt)}
+                />
+              ) : (
+                <GradingBeltSelect
+                  student={student}
+                  category={category}
+                  beltOptions={beltOptionsForCategory(category)}
+                  saving={savingGradingKey === student.contactKey}
+                  onChange={(belt) => onGradingBeltChange(student, belt)}
+                />
+              )}
             </dd>
           </>
         )}
@@ -181,7 +192,9 @@ export default function StudentTable({
               <th className="w-[14%] px-3 py-2">Email</th>
               <th className="w-[10%] px-3 py-2">Phone</th>
               {!readOnly && onGradingBeltChange && (
-                <th className="w-[14%] px-3 py-2">Grading belt</th>
+                <th className="w-[14%] px-3 py-2">
+                  {category === "kids" ? "Next belt list" : "Grading belt"}
+                </th>
               )}
             </tr>
           </thead>
@@ -257,7 +270,15 @@ export default function StudentTable({
                   </td>
                   {!readOnly && onGradingBeltChange && (
                     <td className="px-3 py-2 align-middle">
-                      {student.contactKey ? (
+                      {!student.contactKey ? (
+                        "—"
+                      ) : category === "kids" ? (
+                        <NextBeltListButton
+                          student={student}
+                          saving={savingGradingKey === student.contactKey}
+                          onChange={(belt) => onGradingBeltChange(student, belt)}
+                        />
+                      ) : (
                         <GradingBeltSelect
                           student={student}
                           category={category}
@@ -265,8 +286,6 @@ export default function StudentTable({
                           saving={savingGradingKey === student.contactKey}
                           onChange={(belt) => onGradingBeltChange(student, belt)}
                         />
-                      ) : (
-                        "—"
                       )}
                     </td>
                   )}

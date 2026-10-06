@@ -230,11 +230,10 @@ export default function GradingDashboard({
     ? selectedClassId
     : "";
 
-  const studentsWithOverrides = useMemo(() => {
-    const list = dataset.students;
-    if (!gradingViewEnabled) return list;
-    return mergeGradingOverrides(list, gradingOverrides[category] || {});
-  }, [dataset.students, gradingOverrides, category, gradingViewEnabled]);
+  const studentsWithOverrides = useMemo(
+    () => mergeGradingOverrides(dataset.students, gradingOverrides[category] || {}),
+    [dataset.students, gradingOverrides, category]
+  );
 
   const beltOptions = useMemo(() => {
     if (effectiveViewMode === "grading") {
@@ -261,9 +260,7 @@ export default function GradingDashboard({
 
   function filteredFor(cat, students, overrides) {
     const useGrading = supportsGradingBeltView(cat);
-    const merged = useGrading
-      ? mergeGradingOverrides(students, overrides[cat] || {})
-      : students;
+    const merged = mergeGradingOverrides(students, overrides[cat] || {});
     const classScoped =
       reportScope === "class"
         ? effectiveSelectedClassId
@@ -461,6 +458,12 @@ export default function GradingDashboard({
     }
     if (result.localOnly && result.warning) {
       setMoveMessage(result.warning);
+    } else if (category === "kids") {
+      setMoveMessage(
+        gradingBelt
+          ? `${student.fullName} added to the ${beltDisplayName(gradingBelt)} list for PDF export.`
+          : `${student.fullName} removed from the next belt list.`
+      );
     }
     const next = { ...gradingOverrides[category] };
     if (!gradingBelt) {
@@ -906,9 +909,7 @@ export default function GradingDashboard({
                           : undefined
                     }
                     onGradingBeltChange={
-                      readOnly ||
-                      !gradingViewEnabled ||
-                      !onGradingOverridesChange
+                      readOnly || !onGradingOverridesChange
                         ? undefined
                         : handleGradingBeltChange
                     }
