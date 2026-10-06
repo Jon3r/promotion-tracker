@@ -1,0 +1,11 @@
+Unhandled exception:
+Bad state: No element
+#0      Iterable.first (dart:core/iterable.dart:663:7)
+#1      firstLineOfStdout (file:///Users/andyjones/.pub-cache/hosted/pub.dev/objective_c-9.6.0/hook/build.dart:198:8)
+#2      sdkPath (file:///Users/andyjones/.pub-cache/hosted/pub.dev/objective_c-9.6.0/hook/build.dart:189:10)
+#3      main.<anonymous closure> (file:///Users/andyjones/.pub-cache/hosted/pub.dev/objective_c-9.6.0/hook/build.dart:65:21)
+#4      build (package:hooks/src/api/build_and_link.dart:250:18)
+#5      main (file:///Users/andyjones/.pub-cache/hosted/pub.dev/objective_c-9.6.0/hook/build.dart:22:9)
+#6      _delayEntrypointInvocation.<anonymous closure> (dart:isolate-patch/isolate_patch.dart:311:33)
+#7      _RawReceivePort._handleMessage (dart:isolate-patch/isolate_patch.dart:192:12)
+
