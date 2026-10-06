@@ -9,6 +9,8 @@ import { syncRosterFromClubWorx } from "@/lib/clubworx/syncRoster.server";
 import { isClubWorxConfigured } from "@/lib/clubworx/client.server";
 import { isClubWorxRateLimitError } from "@/lib/clubworx/retry";
 
+export const maxDuration = 300;
+
 /**
  * Light write actions for the Flutter Grading tab.
  * Body: { action: "setOverride" | "clearOverride" | "sync", ... }

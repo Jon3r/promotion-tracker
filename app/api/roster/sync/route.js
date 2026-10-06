@@ -3,6 +3,9 @@ import { isPostgresConfigured } from "@/lib/rosterDb.server";
 import { isClubWorxConfigured } from "@/lib/clubworx/client.server";
 import { syncRosterFromClubWorx } from "@/lib/clubworx/syncRoster.server";
 import { verifyUploadSecret } from "@/lib/authSecret.server";
+
+export const maxDuration = 300;
+
 function verifySyncAuth(request, body) {
   const cronSecret = process.env.CRON_SECRET?.trim();
   if (cronSecret) {
