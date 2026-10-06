@@ -3,6 +3,9 @@ import { isPostgresConfigured } from "@/lib/rosterDb.server";
 import { isClubWorxConfigured } from "@/lib/clubworx/client.server";
 import { syncRosterFromClubWorx } from "@/lib/clubworx/syncRoster.server";
 import { verifyUploadSecret } from "@/lib/authSecret.server";
+
+export const maxDuration = 300;
+
 function verifySyncAuth(request, body) {
   const cronSecret = process.env.CRON_SECRET?.trim();
   if (cronSecret) {
@@ -63,6 +66,15 @@ export async function POST(request) {
     console.error("ClubWorx sync failed:", e);
     const message =
       e instanceof Error ? e.message : "Could not sync roster from ClubWorx";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const isRateLimit =
+      /\(429\)/.test(message) || /too many requests/i.test(message);
+    return NextResponse.json(
+      {
+        error: isRateLimit
+          ? "ClubWorx is rate-limiting requests (429). Wait a minute, then try Sync once — do not click repeatedly."
+          : message,
+      },
+      { status: isRateLimit ? 429 : 500 }
+    );
   }
 }

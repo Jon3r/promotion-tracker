@@ -721,7 +721,7 @@ export default function GradingDashboard({
                   aria-label="View mode"
                 >
                   <option value="current">View by current belt</option>
-                  <option value="grading">View by grading belt (next colour)</option>
+                  <option value="grading">View by grading belt</option>
                 </select>
               )}
               <select
