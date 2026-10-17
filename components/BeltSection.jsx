@@ -16,6 +16,8 @@ export default function BeltSection({
   onGradingBeltChange,
   savingGiSizeId,
   savingGradingKey,
+  onAddToGradingList,
+  gradingListStudentIds,
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const isUnknown = belt === "unknown";
@@ -53,6 +55,8 @@ export default function BeltSection({
             onGradingBeltChange={onGradingBeltChange}
             savingGiSizeId={savingGiSizeId}
             savingGradingKey={savingGradingKey}
+            onAddToGradingList={onAddToGradingList}
+            gradingListStudentIds={gradingListStudentIds}
           />
         </div>
       )}
