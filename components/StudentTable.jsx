@@ -35,6 +35,8 @@ function StudentCard({
   onGradingBeltChange,
   savingGiSizeId,
   savingGradingKey,
+  onAddToGradingList,
+  isInGradingList,
 }) {
   const highlight = isUpcoming(student);
   const readyToPromote = isReadyToPromote(student);
@@ -46,6 +48,15 @@ function StudentCard({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
+        {onAddToGradingList && (
+          <input
+            type="checkbox"
+            checked={isInGradingList}
+            onChange={(e) => onAddToGradingList(student, e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+            aria-label={`Add ${student.fullName} to grading list`}
+          />
+        )}
         <p className="min-w-0 flex-1 font-medium text-zinc-900">
           {student.fullName}
         </p>
@@ -150,12 +161,18 @@ export default function StudentTable({
   onGradingBeltChange,
   savingGiSizeId = null,
   savingGradingKey = null,
+  onAddToGradingList,
+  gradingListStudentIds = new Set(),
 }) {
   if (!students.length) {
     return <p className="py-4 text-sm text-zinc-500">No students in this group.</p>;
   }
 
   const beltOptions = beltOptionsForCategory(category);
+  
+  function getStudentId(student) {
+    return student.contactKey || student.memberStyleId || student.fullName;
+  }
 
   return (
     <>
@@ -172,6 +189,8 @@ export default function StudentTable({
             onGradingBeltChange={onGradingBeltChange}
             savingGiSizeId={savingGiSizeId}
             savingGradingKey={savingGradingKey}
+            onAddToGradingList={onAddToGradingList}
+            isInGradingList={gradingListStudentIds.has(getStudentId(student))}
           />
         ))}
       </ul>
@@ -180,6 +199,9 @@ export default function StudentTable({
         <table className="w-full min-w-[1280px] table-fixed divide-y divide-zinc-200 text-left text-sm">
           <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-500">
             <tr>
+              {onAddToGradingList && (
+                <th className="w-10 px-2 py-2" aria-label="Select for grading list" />
+              )}
               {onExcludeStudent && (
                 <th className="w-10 px-2 py-2" aria-label="Remove" />
               )}
@@ -202,12 +224,24 @@ export default function StudentTable({
             {students.map((student) => {
               const highlight = isUpcoming(student);
               const readyToPromote = isReadyToPromote(student);
+              const studentId = getStudentId(student);
 
               return (
                 <tr
                   key={`${student.contactKey || student.fullName}-${student.email}`}
                   className={highlight ? "bg-amber-50/80" : ""}
                 >
+                  {onAddToGradingList && (
+                    <td className="px-2 py-2 align-middle">
+                      <input
+                        type="checkbox"
+                        checked={gradingListStudentIds.has(studentId)}
+                        onChange={(e) => onAddToGradingList(student, e.target.checked)}
+                        className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                        aria-label={`Add ${student.fullName} to grading list`}
+                      />
+                    </td>
+                  )}
                   {onExcludeStudent && (
                     <td className="px-2 py-2 align-middle">
                       <ExcludeStudentButton

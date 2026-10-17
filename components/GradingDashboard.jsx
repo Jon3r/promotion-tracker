@@ -43,6 +43,7 @@ import BeltSection from "@/components/BeltSection";
 import StripeFilter from "@/components/StripeFilter";
 import EventDatesFields from "@/components/EventDatesFields";
 import Button from "@/components/Button";
+import GradingListPanel from "@/components/GradingListPanel";
 import {
   loadEventDates,
   saveEventDates,
@@ -111,6 +112,9 @@ export default function GradingDashboard({
   const [classLoading, setClassLoading] = useState(false);
   const [classError, setClassError] = useState("");
   const isClassPromotionsTab = reportScope === "class";
+  
+  const [gradingList, setGradingList] = useState({ adults: [], kids: [] });
+  const [showGradingList, setShowGradingList] = useState(false);
 
   useEffect(() => {
     setEventDates(loadEventDates());
@@ -554,6 +558,51 @@ export default function GradingDashboard({
     setMoveMessage(`Reset grading moves for ${category}.`);
   }
 
+  function getStudentId(student) {
+    return student.contactKey || student.memberStyleId || student.fullName;
+  }
+
+  function handleAddToGradingList(student, isChecked) {
+    setGradingList((prev) => {
+      const currentList = prev[category];
+      const studentId = getStudentId(student);
+      
+      if (isChecked) {
+        const exists = currentList.some((s) => getStudentId(s) === studentId);
+        if (exists) return prev;
+        return {
+          ...prev,
+          [category]: [...currentList, student],
+        };
+      } else {
+        return {
+          ...prev,
+          [category]: currentList.filter((s) => getStudentId(s) !== studentId),
+        };
+      }
+    });
+  }
+
+  function handleRemoveFromGradingList(student) {
+    setGradingList((prev) => ({
+      ...prev,
+      [category]: prev[category].filter(
+        (s) => getStudentId(s) !== getStudentId(student)
+      ),
+    }));
+  }
+
+  function handleClearGradingList() {
+    setGradingList((prev) => ({
+      ...prev,
+      [category]: [],
+    }));
+  }
+
+  const gradingListStudentIds = useMemo(() => {
+    return new Set(gradingList[category].map(getStudentId));
+  }, [gradingList, category]);
+
   return (
     <>
       {viewLabel && (
@@ -812,6 +861,13 @@ export default function GradingDashboard({
               >
                 Belt order CSV
               </Button>
+              <Button
+                variant={showGradingList ? "primary" : "secondary"}
+                onClick={() => setShowGradingList(!showGradingList)}
+                className="w-full lg:col-span-3"
+              >
+                {showGradingList ? "Hide" : "Show"} grading list ({gradingList[category].length})
+              </Button>
               {adults.students.length > 0 && kids.students.length > 0 && (
                 <Button
                   variant="primary"
@@ -883,6 +939,18 @@ export default function GradingDashboard({
                 </p>
               )}
 
+              {showGradingList && (
+                <section className="mb-6 rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
+                  <GradingListPanel
+                    students={gradingList[category]}
+                    category={category}
+                    eventDates={eventDates}
+                    onRemoveStudent={handleRemoveFromGradingList}
+                    onClearAll={handleClearGradingList}
+                  />
+                </section>
+              )}
+
               <section className="space-y-4">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
                   {effectiveViewMode === "grading"
@@ -915,6 +983,8 @@ export default function GradingDashboard({
                     }
                     savingGiSizeId={savingGiSizeId}
                     savingGradingKey={savingGradingKey}
+                    onAddToGradingList={readOnly ? undefined : handleAddToGradingList}
+                    gradingListStudentIds={gradingListStudentIds}
                   />
                 ))}
                 {grouped.size === 0 && (
