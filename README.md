@@ -1,5 +1,8 @@
 # BJJ Grading Report
 
+Companion **Android admin app** for in-class stripe promotions and a phone **Grading** roster tab: [`mobile/`](mobile/). Production setup: [`mobile/PRODUCTION.md`](mobile/PRODUCTION.md). Stripe-due students only on the mat (never belt-ups). The Grading tab reads the shared Vercel Postgres roster via `/api/mobile/*`.
+
+
 A Next.js app for coaches to visualise student promotion data from Excel exports. Upload separate **Adults** and **Kids** spreadsheets; students are grouped by belt colour with upcoming promotion dates highlighted.
 
 Excel is parsed in the browser. The **live roster** is stored in **Vercel Postgres** so every coach sees the same data on any device.

@@ -7,6 +7,7 @@ import { isClubWorxRoster } from "@/lib/rosterSource";
 import {
   fetchRoster,
   syncRosterFromClubWorx,
+  refreshRosterIfStale,
   fetchSyncStatus,
   fetchGradingOverrides,
   updateStudentGiSize,
@@ -161,31 +162,8 @@ export default function Home() {
       const { adults: nextAdults, kids: nextKids } = rosterFromApiPayload(remote);
       const rosterEmpty =
         !nextAdults.students.length && !nextKids.students.length;
-
-      if (rosterEmpty) {
-        setClubworxSyncing(true);
-        const sync = await syncRosterFromClubWorx();
-        if (sync.ok) {
-          const reload = await fetchRoster();
-          if (reload.ok && reload.configured) {
-            const loaded = rosterFromApiPayload(reload);
-            applyRoster(loaded.adults, loaded.kids);
-            setCloudStatus("synced");
-            setClubworxMessage(
-              `Loaded ${sync.adultsCount} adults and ${sync.kidsCount} kids from ClubWorx.`
-            );
-          }
-        } else {
-          setClubworxError(
-            sync.error ||
-              "No roster in the database yet. Use Sync from ClubWorx to load members."
-          );
-        }
-        setClubworxSyncing(false);
-      } else {
-        applyRoster(nextAdults, nextKids);
-        setCloudStatus("synced");
-      }
+      applyRoster(nextAdults, nextKids);
+      setCloudStatus("synced");
 
       const overridesRes = await fetchGradingOverrides();
       if (overridesRes.ok) {
@@ -196,12 +174,30 @@ export default function Home() {
       }
 
       setHydrated(true);
+
+      setClubworxSyncing(true);
+      const refresh = await refreshRosterIfStale();
+      if (refresh.ok && !refresh.skipped) {
+        const reload = await reloadFromDatabase();
+        if (reload.ok) {
+          setClubworxMessage(
+            `Updated ${refresh.adultsCount} adults and ${refresh.kidsCount} kids from ClubWorx.`
+          );
+        }
+      } else if (!refresh.ok) {
+        setClubworxError(
+          rosterEmpty
+            ? refresh.error ||
+                "No roster in the database yet. Use Sync from ClubWorx to load members."
+            : refresh.error
+        );
+      }
+      setClubworxSyncing(false);
     }
 
     load();
     // Initial load only — manual refresh uses runClubWorxSync
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applyRoster]);
+  }, [applyRoster, reloadFromDatabase]);
 
   const hasAnyData = adults.students.length > 0 || kids.students.length > 0;
 
