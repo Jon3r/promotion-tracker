@@ -54,6 +54,33 @@ For cloud sync locally, copy `POSTGRES_URL` into `.env.local` (see Vercel Postgr
 | `POSTGRES_URL_NON_POOLING` | Migrations / Query tab |
 | `ROSTER_UPLOAD_SECRET` | Optional password for saves and share publish |
 
+## ClubWorx Integration
+
+The app can sync roster data directly from ClubWorx API instead of uploading Excel files.
+
+### Setup
+
+1. Get your ClubWorx API key from ClubWorx settings
+2. Add to Vercel Environment Variables:
+   - `CLUBWORX_ACCOUNT_KEY` - Your ClubWorx API key (required)
+   - `CLUBWORX_INCREMENTAL_SYNC` - Enable incremental sync (default: enabled, set to `"0"` to disable)
+   - `CLUBWORX_PAGE_DELAY_MS` - Delay between API requests in ms (default: `500`, increase to `1000` or higher if hitting rate limits)
+   - `CLUBWORX_PAGE_SIZE` - Records per page (default: `50`)
+   - `CLUBWORX_MAX_RETRIES` - Max retry attempts (default: `4`)
+   - `CLUBWORX_EXCLUDE_MEMBER_STATUSES` - Comma-separated statuses to exclude (default: `"Cancelled"`)
+3. Trigger sync at `/api/roster/sync` (requires `ROSTER_UPLOAD_SECRET`)
+
+### Rate Limiting
+
+ClubWorx API has rate limits. If you see **429 "Too Many Requests"** errors:
+
+1. **Ensure incremental sync is enabled** (default) - syncs only changed records
+2. **Increase page delay**: Set `CLUBWORX_PAGE_DELAY_MS=1000` or higher
+3. **Wait a few minutes** before retrying - the system uses exponential backoff
+4. The sync will NOT fall back to a full sync on rate limit errors to avoid making more requests
+
+See [clubworkxapi.md](clubworkxapi.md) for complete ClubWorx API documentation.
+
 **Local development without Postgres:** uploads stay in browser localStorage only; share links save to `.data/shares/`.
 
 ## Share links (optional snapshots)

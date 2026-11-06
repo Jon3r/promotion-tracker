@@ -255,6 +255,46 @@ status=Follow-up Email
 - Set Content-Type header to `application/x-www-form-urlencoded`
 - Response will be JSON format even though request is form-encoded
 
+## Rate Limiting
+
+ClubWorx API has rate limits to prevent excessive requests. When syncing large datasets:
+
+### Environment Variables for Rate Limit Control
+
+- `CLUBWORX_INCREMENTAL_SYNC`: Enable/disable incremental sync (default: enabled, set to `"0"` to disable)
+  - When enabled, only syncs records that changed since the last sync
+  - Dramatically reduces API calls for regular syncs
+  
+- `CLUBWORX_PAGE_DELAY_MS`: Delay between page requests in milliseconds (default: `500`)
+  - Increase this value if you're hitting rate limits
+  - Recommended: `1000` or higher for large syncs
+  
+- `CLUBWORX_PAGE_SIZE`: Number of records per page (default: `50`)
+  - Lower values = more requests but smaller responses
+  - Higher values = fewer requests but may hit other limits
+  
+- `CLUBWORX_MAX_RETRIES`: Maximum retry attempts for failed requests (default: `4`)
+  - Rate limit errors (429) automatically get up to 8 retries with exponential backoff
+  
+- `CLUBWORX_UPDATED_AFTER_PARAM`: Query parameter name for incremental sync (default: `"updated_after"`)
+  - Some ClubWorx instances may use different parameter names
+
+### Handling 429 Errors
+
+When you receive a 429 "Too Many Requests" error:
+
+1. **Wait before retrying**: The sync will automatically retry with exponential backoff
+2. **Enable incremental sync**: Ensures only changed records are fetched
+3. **Increase page delay**: Set `CLUBWORX_PAGE_DELAY_MS=1000` or higher
+4. **Don't force full sync**: The system will not fall back to full sync on rate limits to avoid making the problem worse
+
+### Best Practices
+
+- Run syncs during off-peak hours
+- Use incremental sync for regular updates (default behavior)
+- Only disable incremental sync for initial setup or troubleshooting
+- Monitor sync frequency to avoid excessive API calls
+
 ## Common Errors
 
 - **404 Not Found**: Usually indicates wrong endpoint or missing `/v2/` in path
