@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import CheckInBoard from "@/components/CheckInBoard";
 import { pickDisplayedClass } from "@/lib/clubworx/classes";
 import {
   fetchClubWorxClasses,
@@ -194,16 +195,10 @@ export default function CheckInPage() {
             </p>
           )}
           {shownAttendees.length > 0 && (
-            <ul className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-              {shownAttendees.map((person) => (
-                <li
-                  key={person.contactKey}
-                  className="min-w-0 border-b border-zinc-100 py-3 text-2xl font-medium text-zinc-900 sm:text-3xl"
-                >
-                  {person.fullName}
-                </li>
-              ))}
-            </ul>
+            <CheckInBoard
+              key={currentClass.id}
+              attendees={shownAttendees}
+            />
           )}
           {lastAttendeesAt && attendeesClassId === currentClass.id && (
             <p className="mt-8 text-sm text-zinc-400">
