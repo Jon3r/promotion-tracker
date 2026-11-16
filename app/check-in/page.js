@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import PageHeader from "@/components/PageHeader";
 import CheckInBoard from "@/components/CheckInBoard";
-import { pickDisplayedClass } from "@/lib/clubworx/classes";
+import {
+  dayKeyInTimeZone,
+  filterClassesForDay,
+  pickDisplayedClass,
+} from "@/lib/clubworx/classes";
 import {
   fetchClubWorxClasses,
   fetchClubWorxClassAttendees,
@@ -11,17 +15,6 @@ import {
 
 const SCHEDULE_POLL_MS = 60_000;
 const ATTENDEES_POLL_MS = 5_000;
-
-/**
- * @param {Date} [date]
- * @returns {string}
- */
-function localDayKey(date = new Date()) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
 
 /**
  * @param {string|null|undefined} iso
@@ -34,6 +27,7 @@ function formatTimeLabel(iso) {
   return d.toLocaleTimeString(undefined, {
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "Australia/Sydney",
   });
 }
 
@@ -48,7 +42,7 @@ export default function CheckInPage() {
   const [attendeesLoading, setAttendeesLoading] = useState(false);
   const [lastAttendeesAt, setLastAttendeesAt] = useState(null);
 
-  const day = localDayKey(now);
+  const day = dayKeyInTimeZone(now);
   const selection = pickDisplayedClass(classes, now);
   const currentClass = selection.class;
   const nextClass = selection.nextClass;
@@ -56,15 +50,29 @@ export default function CheckInPage() {
     currentClass && attendeesClassId === currentClass.id ? attendees : [];
 
   const loadSchedule = useCallback(async () => {
-    const result = await fetchClubWorxClasses(localDayKey());
-    if (!result.ok) {
-      setScheduleError(result.error || "Could not load today’s classes");
-      setClasses([]);
-      setScheduleLoading(false);
-      return;
+    const gymDay = dayKeyInTimeZone(new Date());
+    // Prefer the current-week schedule, then narrow to the gym-local day so
+    // UTC boundary mismatches do not drop morning/evening classes.
+    const week = await fetchClubWorxClasses();
+    let list = [];
+    if (week.ok) {
+      list = filterClassesForDay(week.classes || [], gymDay);
+    }
+    if (!list.length) {
+      const dayResult = await fetchClubWorxClasses(gymDay);
+      if (dayResult.ok) {
+        list = filterClassesForDay(dayResult.classes || [], gymDay);
+      } else if (!week.ok) {
+        setScheduleError(
+          dayResult.error || week.error || "Could not load today’s classes"
+        );
+        setClasses([]);
+        setScheduleLoading(false);
+        return;
+      }
     }
     setScheduleError("");
-    setClasses(result.classes || []);
+    setClasses(list);
     setScheduleLoading(false);
   }, []);
 
@@ -126,7 +134,9 @@ export default function CheckInPage() {
       ? "Live now"
       : selection.status === "upcoming"
         ? "Starting soon"
-        : "No class right now";
+        : selection.status === "empty"
+          ? "No classes scheduled"
+          : "No class right now";
 
   return (
     <main className="mx-auto flex min-h-screen w-full min-w-0 max-w-[90rem] flex-1 flex-col overflow-x-clip px-4 py-6 sm:px-6 sm:py-8">
@@ -171,7 +181,9 @@ export default function CheckInPage() {
             <h2 className="mt-1 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
               {nextClass
                 ? `Next class at ${formatTimeLabel(nextClass.startsAt)}`
-                : "No more classes today"}
+                : selection.status === "empty"
+                  ? "No classes scheduled today"
+                  : "No more classes today"}
             </h2>
             {nextClass && (
               <p className="mt-2 text-lg text-zinc-600">{nextClass.title}</p>
