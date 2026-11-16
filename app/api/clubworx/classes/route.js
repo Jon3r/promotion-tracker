@@ -6,6 +6,7 @@ import {
 import {
   buildClubWorxDayParamCandidates,
   buildClubWorxClassSelectorParamCandidates,
+  mergeClassTiming,
   normaliseClubWorxClassFromBooking,
   normaliseClubWorxEvent,
   resolveClubWorxDayKey,
@@ -56,6 +57,31 @@ function dedupeClasses(classes) {
   return [...byKey.values()];
 }
 
+/**
+ * Collect likely timing-related keys from a raw ClubWorx row for diagnostics.
+ * @param {Record<string, unknown>|null|undefined} row
+ */
+function timingProbe(row) {
+  if (!row || typeof row !== "object") return null;
+  /** @type {Record<string, unknown>} */
+  const probe = { keys: Object.keys(row) };
+  for (const [key, value] of Object.entries(row)) {
+    if (/start|end|date|time|occur|sched|begin|duration/i.test(key)) {
+      probe[key] = value;
+    }
+  }
+  const nested = row.event || row.schedule_event || row.class;
+  if (nested && typeof nested === "object") {
+    probe.nestedKeys = Object.keys(/** @type {object} */ (nested));
+    for (const [key, value] of Object.entries(/** @type {object} */ (nested))) {
+      if (/start|end|date|time|occur|sched|begin|duration/i.test(key)) {
+        probe[`event.${key}`] = value;
+      }
+    }
+  }
+  return probe;
+}
+
 export async function GET(request) {
   if (!isClubWorxConfigured()) {
     return NextResponse.json(
@@ -65,7 +91,9 @@ export async function GET(request) {
   }
 
   try {
-    const day = new URL(request.url).searchParams.get("day")?.trim() || "";
+    const search = new URL(request.url).searchParams;
+    const day = search.get("day")?.trim() || "";
+    const debug = search.get("debug") === "1";
     const windowCandidates = day
       ? buildClubWorxDayParamCandidates(day)
       : buildClubWorxClassSelectorParamCandidates();
@@ -76,10 +104,13 @@ export async function GET(request) {
       ? await fetchBookingsForDay(windowCandidates)
       : await fetchClubWorxPagesWithParamCandidates("bookings", windowCandidates);
     let classes = [];
+    /** @type {Record<string, unknown>|null} */
+    let firstBooking = null;
 
     if (bookingsResult.ok && bookingsResult.rows.length) {
       const byId = new Map();
       for (const booking of bookingsResult.rows) {
+        if (!firstBooking) firstBooking = booking;
         if (day) {
           const bookingDay = resolveClubWorxDayKey(booking);
           if (bookingDay && bookingDay !== day) continue;
@@ -101,15 +132,30 @@ export async function GET(request) {
       "events",
       windowCandidates
     );
+    const eventClasses = eventsResult.ok
+      ? eventsResult.rows
+          .filter((row) => {
+            if (!day) return true;
+            const eventDay = resolveClubWorxDayKey(row);
+            return !eventDay || eventDay === day;
+          })
+          .map(normaliseClubWorxEvent)
+          .filter((event) => event.id)
+      : [];
+
     if (!classes.length) {
-      classes = eventsResult.rows
-        .filter((row) => {
-          if (!day) return true;
-          const eventDay = resolveClubWorxDayKey(row);
-          return !eventDay || eventDay === day;
-        })
-        .map(normaliseClubWorxEvent)
-        .filter((event) => event.id);
+      classes = eventClasses;
+    } else if (eventClasses.length) {
+      // Bookings often omit schedule fields; enrich from the events endpoint.
+      const eventsById = new Map(eventClasses.map((event) => [event.id, event]));
+      classes = classes.map((entry) =>
+        mergeClassTiming(entry, eventsById.get(entry.id))
+      );
+      for (const event of eventClasses) {
+        if (!classes.some((entry) => entry.id === event.id)) {
+          classes.push(event);
+        }
+      }
     }
 
     if (!classes.length && !bookingsResult.ok) {
@@ -130,11 +176,21 @@ export async function GET(request) {
       return at - bt;
     });
 
-    return NextResponse.json({ ok: true, classes });
+    /** @type {Record<string, unknown>} */
+    const payload = { ok: true, classes };
+    if (debug) {
+      payload.debug = {
+        bookingsCount: bookingsResult.rows?.length || 0,
+        eventsCount: eventsResult.rows?.length || 0,
+        firstBookingTiming: timingProbe(firstBooking),
+        firstEventTiming: timingProbe(eventsResult.rows?.[0]),
+      };
+    }
+
+    return NextResponse.json(payload);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Could not load ClubWorx classes";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
