@@ -140,7 +140,7 @@ export default function CheckInPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full min-w-0 max-w-[90rem] flex-1 flex-col overflow-x-clip px-4 py-6 sm:px-6 sm:py-8">
-      <PageHeader title="Check in" />
+      <PageHeader title="Check in" centered largeTitle />
 
       <section className="mb-6 min-w-0 border-b border-zinc-200 pb-6">
         {scheduleLoading && (
