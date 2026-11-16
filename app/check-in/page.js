@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { pickDisplayedClass } from "@/lib/clubworx/classes";
 import {
@@ -130,21 +129,7 @@ export default function CheckInPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full min-w-0 max-w-[90rem] flex-1 flex-col overflow-x-clip px-4 py-6 sm:px-6 sm:py-8">
-      <PageHeader
-        title="Check in"
-        action={
-          <Link
-            href="/"
-            className="btn-ghost text-sm"
-          >
-            Grading report
-          </Link>
-        }
-      >
-        <p className="mt-2 max-w-2xl text-zinc-600">
-          Live class check-ins from ClubWorx. Updates every few seconds.
-        </p>
-      </PageHeader>
+      <PageHeader title="Check in" />
 
       <section className="mb-6 min-w-0 border-b border-zinc-200 pb-6">
         {scheduleLoading && (
