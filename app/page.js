@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { deduplicateStudents } from "@/lib/deduplicate";
 import { deserializeDataset } from "@/lib/datasetSerialize";
 import { isClubWorxRoster } from "@/lib/rosterSource";
@@ -229,7 +230,14 @@ export default function Home() {
 
   return (
     <main className="mx-auto min-h-screen w-full min-w-0 max-w-[90rem] flex-1 overflow-x-clip px-4 py-8 sm:px-6">
-      <PageHeader title="BJJ grading report">
+      <PageHeader
+        title="BJJ grading report"
+        action={
+          <Link href="/check-in" className="btn-ghost text-sm">
+            Check in display
+          </Link>
+        }
+      >
         <p className="mt-2 max-w-2xl text-zinc-600">
           Belt ranks are loaded from ClubWorx and stored in the cloud so every
           coach sees the same grading report on any device.
