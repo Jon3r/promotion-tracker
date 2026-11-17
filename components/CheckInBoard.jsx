@@ -10,19 +10,30 @@ const POPUP_MS = 2800;
 
 /**
  * Responsive multi-column check-in list with enter animations and a
- * flashy popup when someone newly checks in.
+ * flashy popup (or non-blocking corner toast) when someone newly checks in.
  *
  * Remount with a new `key={classId}` from the parent when the class changes
  * so known check-ins reset without a sync setState-in-effect.
  *
- * @param {{ attendees: CheckInPerson[] }} props
+ * @param {{ attendees: CheckInPerson[], compact?: boolean, popupVariant?: "full" | "toast", hideList?: boolean, onNewCheckIn?: (person: CheckInPerson) => void }} props
  */
-export default function CheckInBoard({ attendees }) {
+export default function CheckInBoard({
+  attendees,
+  compact = false,
+  popupVariant = "full",
+  hideList = false,
+  onNewCheckIn,
+}) {
   const [animatingKeys, setAnimatingKeys] = useState(() => new Set());
   const [popup, setPopup] = useState(/** @type {CheckInPerson|null} */ (null));
   const [queueTick, setQueueTick] = useState(0);
   const knownKeysRef = useRef(/** @type {Set<string>|null} */ (null));
   const queueRef = useRef(/** @type {CheckInPerson[]} */ ([]));
+  const onNewCheckInRef = useRef(onNewCheckIn);
+
+  useEffect(() => {
+    onNewCheckInRef.current = onNewCheckIn;
+  }, [onNewCheckIn]);
 
   useEffect(() => {
     const list = attendees || [];
@@ -51,6 +62,9 @@ export default function CheckInBoard({ attendees }) {
     // Defer state updates so we aren't syncing setState in the effect body
     // in a way that cascades renders on the same turn.
     queueMicrotask(() => {
+      for (const person of newcomers) {
+        onNewCheckInRef.current?.(person);
+      }
       setAnimatingKeys((prev) => {
         const next = new Set(prev);
         for (const person of newcomers) next.add(person.contactKey);
@@ -73,36 +87,55 @@ export default function CheckInBoard({ attendees }) {
     };
   }, [popup, queueTick]);
 
-  if (!attendees?.length) return null;
+  if (!attendees?.length && !popup) return null;
+
+  const listClass = compact ? "check-in-columns--multi" : "check-in-columns";
+  const itemBaseClass = compact
+    ? "check-in-name check-in-name--compact break-inside-avoid"
+    : "check-in-name break-inside-avoid";
 
   return (
     <>
-      <ul className="check-in-columns">
-        {attendees.map((person) => {
-          const animate = animatingKeys.has(person.contactKey);
-          return (
-            <li
-              key={person.contactKey}
-              className={`check-in-name break-inside-avoid${
-                animate ? " check-in-name--enter" : ""
-              }`}
-              onAnimationEnd={() => {
-                if (!animate) return;
-                setAnimatingKeys((prev) => {
-                  if (!prev.has(person.contactKey)) return prev;
-                  const next = new Set(prev);
-                  next.delete(person.contactKey);
-                  return next;
-                });
-              }}
-            >
-              {person.fullName}
-            </li>
-          );
-        })}
-      </ul>
+      {!hideList && attendees?.length > 0 && (
+        <ul className={listClass}>
+          {attendees.map((person) => {
+            const animate = animatingKeys.has(person.contactKey);
+            return (
+              <li
+                key={person.contactKey}
+                className={`${itemBaseClass}${
+                  animate ? " check-in-name--enter" : ""
+                }`}
+                onAnimationEnd={() => {
+                  if (!animate) return;
+                  setAnimatingKeys((prev) => {
+                    if (!prev.has(person.contactKey)) return prev;
+                    const next = new Set(prev);
+                    next.delete(person.contactKey);
+                    return next;
+                  });
+                }}
+              >
+                {person.fullName}
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
-      {popup && (
+      {popup && popupVariant === "toast" && (
+        <div
+          className="check-in-toast"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <p className="check-in-toast__eyebrow">Checked in</p>
+          <p className="check-in-toast__name">{popup.fullName}</p>
+        </div>
+      )}
+
+      {popup && popupVariant === "full" && (
         <div
           className="check-in-popup"
           role="status"

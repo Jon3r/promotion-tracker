@@ -38,3 +38,10 @@ CREATE TABLE IF NOT EXISTS roster_overrides (
 --   ALTER TABLE roster_overrides ADD COLUMN IF NOT EXISTS gi_size TEXT;
 
 CREATE INDEX IF NOT EXISTS roster_overrides_category_idx ON roster_overrides (category);
+
+CREATE TABLE IF NOT EXISTS gym_timer_state (
+  id TEXT PRIMARY KEY,
+  state JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+

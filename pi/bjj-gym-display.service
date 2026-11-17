@@ -1,0 +1,18 @@
+[Unit]
+Description=BJJ Gym Display & Round Timer (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/promotion-tracker
+Environment=NODE_ENV=production
+Environment=PORT=3000
+EnvironmentFile=-/opt/promotion-tracker/.env.local
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

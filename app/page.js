@@ -233,9 +233,14 @@ export default function Home() {
       <PageHeader
         title="BJJ grading report"
         action={
-          <Link href="/check-in" className="btn-ghost text-sm">
-            Check in display
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/gym" className="btn-primary text-sm">
+              Gym TV &amp; Timer
+            </Link>
+            <Link href="/check-in" className="btn-ghost text-sm">
+              Check in display
+            </Link>
+          </div>
         }
       >
         <p className="mt-2 max-w-2xl text-zinc-600">

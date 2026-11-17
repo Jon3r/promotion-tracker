@@ -109,3 +109,29 @@ npm run build
 ```
 
 Deploy to [Vercel](https://vercel.com). Ensure Postgres is connected and `scripts/init-db.sql` has been run.
+
+## Raspberry Pi Gym Display & Round Timer
+
+The app includes a TV-scale BJJ round timer, live ClubWorx class check-in board, and mobile coach remote:
+
+- `/gym` — Unified **Split** TV display (Round Timer + Live Check-In side by side), with top-right mode pill (`Split` | `Timer` | `Check-In`), keyboard shortcuts (`Space` start/pause, `R` reset, `F` fullscreen, `1`/`2`/`3` modes), audio cues, and QR code settings drawer.
+- `/timer` — Full-screen **Round Timer** (still plays corner toast + check-in chime when students arrive).
+- `/check-in` — Full-screen **Check-In** display with mode switcher.
+- `/remote` — Mobile-friendly **Coach Mat Remote** synced via `/api/timer` (persisted in Postgres `gym_timer_state` when `POSTGRES_URL` is configured, with in-memory fallback locally).
+
+### Raspberry Pi Kiosk Setup
+
+1. **Hosted Vercel mode (recommended — no Node server or API keys on the Pi):**
+
+```bash
+./pi/setup-pi.sh https://promotion-tracker-rose.vercel.app/gym
+```
+
+2. **Local Pi mode (runs Next.js on `http://localhost:3000/gym` via `systemd`):**
+
+```bash
+./pi/setup-pi.sh --local
+```
+
+You can also launch kiosk mode manually anytime with `./pi/kiosk.sh [URL]`.
+

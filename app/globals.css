@@ -7,6 +7,11 @@
   --brand-blue-hover: #141288;
   --brand-gold: #ffbe00;
   --brand-gold-hover: #e6ab00;
+  --timer-bg: #09090b;
+  --timer-text: #fafafa;
+  --timer-clock: #ffffff;
+  --timer-rest: #22c55e;
+  --timer-ending: #ef4444;
 }
 
 @theme inline {
@@ -147,6 +152,66 @@ body {
     letter-spacing: -0.02em;
     word-break: break-word;
   }
+
+  .check-in-columns--multi {
+    columns: 1;
+    column-gap: 1.25rem;
+  }
+
+  @media (min-width: 640px) {
+    .check-in-columns--multi {
+      columns: 2;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .check-in-columns--multi {
+      columns: 3;
+    }
+  }
+
+  .check-in-name--compact {
+    margin: 0 0 0.45rem;
+    padding: 0.4rem 0;
+    font-size: clamp(1.05rem, 1.45vw, 1.35rem);
+  }
+
+  .check-in-toast {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 60;
+    max-width: min(92vw, 24rem);
+    padding: 0.9rem 1.25rem;
+    border-radius: 0.85rem;
+    border: 2px solid var(--brand-gold);
+    background: var(--brand-blue);
+    color: #ffffff;
+    box-shadow: 0 18px 45px rgb(9 9 11 / 0.45);
+    pointer-events: none;
+    animation: check-in-toast-enter 2.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .check-in-toast__eyebrow {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--brand-gold);
+  }
+
+  .check-in-toast__name {
+    margin: 0.25rem 0 0;
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  .timer-ending-soon {
+    animation: timer-ending-blink 0.9s ease-in-out infinite;
+  }
 }
 
 @keyframes check-in-name-enter {
@@ -217,5 +282,34 @@ body {
   100% {
     opacity: 0;
     transform: scale(1.12) translateY(-0.75rem);
+  }
+}
+
+@keyframes check-in-toast-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.95);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.98);
+  }
+}
+
+@keyframes timer-ending-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.48;
   }
 }
