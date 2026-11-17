@@ -276,7 +276,14 @@ export function useGymTimer(options = {}) {
         snapshot.phase === "work" &&
         (prev.phase !== "work" || prev.currentRound !== snapshot.currentRound)
       ) {
-        playTimerCue("start");
+        const isFinal =
+          serverState.totalRounds > 0 &&
+          snapshot.currentRound === serverState.totalRounds;
+        playTimerCue("start", {
+          announce: true,
+          round: snapshot.currentRound,
+          isFinal,
+        });
       } else if (snapshot.phase === "rest" && prev.phase !== "rest") {
         playTimerCue("finish");
       } else if (
@@ -287,7 +294,7 @@ export function useGymTimer(options = {}) {
         snapshot.remainingSec > 0 &&
         serverState.roundDurationSec > 15
       ) {
-        playTimerCue("soon");
+        playTimerCue("soon", { announce: true });
       }
     } else if (
       prev.status === "running" &&
@@ -306,6 +313,7 @@ export function useGymTimer(options = {}) {
     snapshot.currentRound,
     snapshot.remainingSec,
     serverState.roundDurationSec,
+    serverState.totalRounds,
     serverState.status,
   ]);
 
@@ -333,7 +341,7 @@ export function useGymTimer(options = {}) {
 
   const testBell = useCallback(async () => {
     await handleUnlockAudio();
-    return playTimerCue("start");
+    return playTimerCue("start", { announce: true, round: 1 });
   }, [handleUnlockAudio]);
 
   const playCheckInChime = useCallback(() => {
