@@ -291,7 +291,7 @@ export default function TimerSettingsSheet({
           <section className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Palette className="h-4 w-4 text-purple-400" />
+                <Palette className="h-4 w-4 text-brand-gold" />
                 Timer Colors
               </div>
               <button

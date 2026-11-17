@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import PageHeader from "@/components/PageHeader";
 import CheckInBoard from "@/components/CheckInBoard";
 
 /**
@@ -51,40 +50,46 @@ export default function CheckInPanel({
 
   return (
     <div
-      className={`flex min-w-0 flex-1 flex-col bg-white text-zinc-900 ${
+      className={`flex min-w-0 flex-1 flex-col bg-brand-blue text-white ${
         compact
           ? "h-full overflow-y-auto px-4 py-4 sm:px-5 sm:py-5"
           : "mx-auto min-h-screen w-full max-w-[90rem] px-4 py-6 sm:px-6 sm:py-8"
       }`}
     >
-      {compact ? (
-        <header className="mb-4 flex items-center gap-3 border-b border-zinc-200 pb-3">
-          <Image
-            src="/pja-logo.png"
-            alt="Parramatta Jiu Jitsu Academy"
-            width={48}
-            height={48}
-            className="h-11 w-11 shrink-0 rounded-full"
-            priority
-          />
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold tracking-tight text-brand-blue">
-              Check in
-            </h1>
-            <p className="text-xs font-medium text-zinc-500">
-              Parramatta Jiu Jitsu Academy
-            </p>
-          </div>
-        </header>
-      ) : (
-        <PageHeader title="Check in" centered largeTitle />
-      )}
+      <header
+        className={`flex items-center gap-3 border-b border-white/25 ${
+          compact ? "mb-4 pb-3" : "mb-6 justify-center pb-6"
+        }`}
+      >
+        <Image
+          src="/pja-logo.png"
+          alt="Parramatta Jiu Jitsu Academy"
+          width={80}
+          height={80}
+          className={`shrink-0 rounded-full ${
+            compact ? "h-11 w-11" : "h-16 w-16 sm:h-20 sm:w-20"
+          }`}
+          priority
+        />
+        <div className="min-w-0">
+          <h1
+            className={`font-bold tracking-tight text-brand-gold ${
+              compact ? "text-xl" : "text-3xl sm:text-5xl"
+            }`}
+          >
+            Check in
+          </h1>
+          <p className={`font-medium text-white/80 ${compact ? "text-xs" : "text-sm sm:text-base"}`}>
+            Parramatta Jiu Jitsu Academy
+          </p>
+        </div>
+      </header>
 
       {scheduleLoading && (
-        <p className="text-zinc-500">Loading today’s schedule…</p>
+        <p className="text-white/75">Loading today’s schedule…</p>
       )}
       {scheduleError && (
-        <p className="text-red-600" role="alert">
+        <p className="text-brand-gold" role="alert">
           {scheduleError}
         </p>
       )}
@@ -92,7 +97,7 @@ export default function CheckInPanel({
       {!scheduleLoading && !scheduleError && sideBySide && (
         <>
           {attendeesError && (
-            <p className="mb-4 text-red-600" role="alert">
+            <p className="mb-4 text-brand-gold" role="alert">
               {attendeesError}
             </p>
           )}
@@ -117,23 +122,23 @@ export default function CheckInPanel({
       {!scheduleLoading && !scheduleError && !sideBySide && currentClass && (
         <>
           <section
-            className={`min-w-0 border-b border-zinc-200 ${
+            className={`min-w-0 border-b border-white/25 ${
               compact ? "mb-4 pb-4" : "mb-6 pb-6"
             }`}
           >
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue sm:text-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white sm:text-sm">
                 {statusLabel}
               </p>
               <h2
-                className={`mt-1 font-bold tracking-tight text-zinc-900 ${
+                className={`mt-1 font-bold tracking-tight text-brand-gold ${
                   compact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-5xl"
                 }`}
               >
                 {currentClass.title}
               </h2>
               <p
-                className={`mt-1.5 text-zinc-600 ${
+                className={`mt-1.5 text-white/80 ${
                   compact ? "text-sm sm:text-base" : "text-lg sm:text-xl"
                 }`}
               >
@@ -146,7 +151,7 @@ export default function CheckInPanel({
                   : ""}
               </p>
               <p
-                className={`mt-2 font-semibold text-brand-blue ${
+                className={`mt-2 font-semibold text-white ${
                   compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
                 }`}
               >
@@ -157,13 +162,13 @@ export default function CheckInPanel({
 
           <section className="min-w-0 flex-1">
             {attendeesError && (
-              <p className="mb-4 text-red-600" role="alert">
+              <p className="mb-4 text-brand-gold" role="alert">
                 {attendeesError}
               </p>
             )}
             {!attendeesError && attendees.length === 0 && (
               <p
-                className={`text-zinc-500 ${
+                className={`text-white/75 ${
                   compact ? "text-base sm:text-lg" : "text-xl sm:text-2xl"
                 }`}
               >
@@ -187,16 +192,16 @@ export default function CheckInPanel({
 
       {!scheduleLoading && !scheduleError && !currentClass && (
         <section
-          className={`min-w-0 border-b border-zinc-200 ${
+          className={`min-w-0 border-b border-white/25 ${
             compact ? "mb-4 pb-4" : "mb-6 pb-6"
           }`}
         >
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 sm:text-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white sm:text-sm">
               {statusLabel}
             </p>
             <h2
-              className={`mt-1 font-bold tracking-tight text-zinc-900 ${
+              className={`mt-1 font-bold tracking-tight text-brand-gold ${
                 compact ? "text-xl sm:text-2xl" : "text-3xl sm:text-4xl"
               }`}
             >
@@ -207,7 +212,7 @@ export default function CheckInPanel({
                   : "No more classes today"}
             </h2>
             {nextClass && (
-              <p className="mt-1.5 text-base text-zinc-600 sm:text-lg">
+              <p className="mt-1.5 text-base text-white/80 sm:text-lg">
                 {nextClass.title}
               </p>
             )}
@@ -217,7 +222,7 @@ export default function CheckInPanel({
 
       {lastAttendeesAt && boards.length > 0 && (
         <p
-          className={`text-xs text-zinc-400 ${compact ? "mt-4" : "mt-8 text-sm"}`}
+          className={`text-xs text-white/60 ${compact ? "mt-4" : "mt-8 text-sm"}`}
         >
           Last updated {lastAttendeesAt.toLocaleTimeString()}
         </p>
@@ -244,30 +249,30 @@ function ClassColumn({
       className={`flex min-h-0 min-w-0 flex-col ${
         divided
           ? compact
-            ? "mt-5 border-t border-zinc-200 pt-5 md:mt-0 md:border-t-0 md:border-l md:pt-0 md:pl-5"
-            : "mt-6 border-t border-zinc-200 pt-6 md:mt-0 md:border-t-0 md:border-l md:pt-0 md:pl-8"
+            ? "mt-5 border-t border-white/25 pt-5 md:mt-0 md:border-t-0 md:border-l md:pt-0 md:pl-5"
+            : "mt-6 border-t border-white/25 pt-6 md:mt-0 md:border-t-0 md:border-l md:pt-0 md:pl-8"
           : compact
             ? "md:pr-5"
             : "md:pr-8"
       }`}
     >
       <div
-        className={`min-w-0 border-b border-zinc-200 ${
+        className={`min-w-0 border-b border-white/25 ${
           compact ? "mb-4 pb-4" : "mb-6 pb-6"
         }`}
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue sm:text-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-white sm:text-sm">
           {label}
         </p>
         <h2
-          className={`mt-1 font-bold tracking-tight text-zinc-900 ${
+          className={`mt-1 font-bold tracking-tight text-brand-gold ${
             compact ? "text-xl sm:text-2xl" : "text-3xl sm:text-4xl"
           }`}
         >
           {classInfo.title}
         </h2>
         <p
-          className={`mt-1.5 text-zinc-600 ${
+          className={`mt-1.5 text-white/80 ${
             compact ? "text-sm" : "text-base sm:text-lg"
           }`}
         >
@@ -276,7 +281,7 @@ function ClassColumn({
           {classInfo.organisation ? ` · ${classInfo.organisation}` : ""}
         </p>
         <p
-          className={`mt-2 font-semibold text-brand-blue ${
+          className={`mt-2 font-semibold text-white ${
             compact ? "text-lg sm:text-xl" : "text-2xl sm:text-3xl"
           }`}
         >
@@ -287,7 +292,7 @@ function ClassColumn({
       <div className="min-w-0 flex-1">
         {names.length === 0 && (
           <p
-            className={`text-zinc-500 ${
+            className={`text-white/75 ${
               compact ? "text-base" : "text-lg sm:text-xl"
             }`}
           >

@@ -46,23 +46,23 @@ export default function RoundTimer({ timer, compact = false }) {
 
   const clockColor =
     snapshot.phase === "rest"
-      ? "var(--timer-rest, #22c55e)"
+      ? "var(--timer-rest, #ffffff)"
       : snapshot.phase === "ready"
-        ? "#ffbe00"
+        ? "var(--timer-clock, #ffbe00)"
         : snapshot.isEndingSoon
-          ? "var(--timer-ending, #ef4444)"
-          : "var(--timer-clock, #ffffff)";
+          ? "var(--timer-ending, #ffffff)"
+          : "var(--timer-clock, #ffbe00)";
 
   const phaseBadgeClass =
     snapshot.phase === "rest"
-      ? "bg-emerald-500/20 text-emerald-300 border-emerald-400/40"
+      ? "border-white/50 bg-white/15 text-white"
       : snapshot.phase === "ready"
-        ? "bg-amber-400/20 text-amber-300 border-amber-400/40"
+        ? "border-brand-gold/50 bg-brand-gold/20 text-brand-gold"
         : snapshot.isEndingSoon
-          ? "bg-red-500/20 text-red-300 border-red-400/40"
+          ? "border-white bg-white/20 text-white"
           : snapshot.phase === "work"
-            ? "bg-brand-gold/20 text-brand-gold border-brand-gold/40"
-            : "bg-white/10 text-zinc-200 border-white/15";
+            ? "border-brand-gold/50 bg-brand-gold/15 text-brand-gold"
+            : "border-white/30 bg-white/10 text-white";
 
   const statusText =
     snapshot.phase === "idle"
@@ -100,39 +100,39 @@ export default function RoundTimer({ timer, compact = false }) {
         compact ? "px-5 py-5 sm:px-7 sm:py-6" : "min-h-screen px-6 py-6 sm:px-10 sm:py-8"
       }`}
       style={{
-        backgroundColor: "var(--timer-bg, #09090b)",
-        color: "var(--timer-text, #fafafa)",
+        backgroundColor: "var(--timer-bg, #1914a6)",
+        color: "var(--timer-text, #ffffff)",
       }}
     >
       {/* Top status bar: Sydney wall clock & audio unlock prompt */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-10 sm:pt-0">
         <div className="flex items-center gap-3">
           <span
-            className="text-lg font-semibold tracking-tight tabular-nums text-white/85 sm:text-2xl"
+            className="text-lg font-semibold tracking-tight tabular-nums text-white sm:text-2xl"
             suppressHydrationWarning
           >
             {formatClockTime(nowMs, GYM_TIME_ZONE)}
           </span>
           {syncError && (
-            <span className="rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs font-medium text-red-200">
+            <span className="rounded-full border border-white/40 bg-white/15 px-2.5 py-0.5 text-xs font-medium text-white">
               {syncError}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2 sm:pr-44">
+        <div className="flex items-center gap-2 lg:pr-[26rem]">
           {!audioUnlocked ? (
             <button
               type="button"
               onClick={unlockAudio}
-              className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/15 px-3 py-1.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-400/25"
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/70 bg-brand-gold/20 px-3 py-1.5 text-xs font-semibold text-brand-gold transition hover:bg-brand-gold/30"
             >
               <VolumeX className="h-3.5 w-3.5" />
               Tap to enable bell audio
             </button>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/60">
-              <Volume2 className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-xs font-medium text-white">
+              <Volume2 className="h-3.5 w-3.5 text-brand-gold" />
               Audio ready
             </span>
           )}
@@ -162,7 +162,7 @@ export default function RoundTimer({ timer, compact = false }) {
         </div>
 
         {/* Thin phase progress bar */}
-        <div className="mt-4 h-2 w-full max-w-2xl overflow-hidden rounded-full bg-white/10">
+        <div className="mt-4 h-2 w-full max-w-2xl overflow-hidden rounded-full bg-white/25">
           <div
             className="h-full rounded-full transition-[width] duration-150 ease-linear"
             style={{
@@ -174,7 +174,7 @@ export default function RoundTimer({ timer, compact = false }) {
 
         {finishLabel && (
           <p
-            className="mt-3 text-sm font-medium tracking-wide text-white/70 sm:text-lg"
+            className="mt-3 text-sm font-medium tracking-wide text-white sm:text-lg"
             suppressHydrationWarning
           >
             {finishLabel}
@@ -194,8 +194,8 @@ export default function RoundTimer({ timer, compact = false }) {
             }}
             className={`inline-flex min-w-[11rem] items-center justify-center gap-2.5 rounded-2xl px-7 py-3.5 text-lg font-bold shadow-lg transition active:scale-[0.98] sm:py-4 sm:text-xl ${
               isRunning
-                ? "bg-amber-400 text-zinc-950 hover:bg-amber-300"
-                : "bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
+                ? "bg-white text-brand-blue hover:bg-white/90"
+                : "bg-brand-gold text-brand-blue hover:bg-brand-gold-hover"
             }`}
           >
             {isRunning ? (
@@ -215,7 +215,7 @@ export default function RoundTimer({ timer, compact = false }) {
             type="button"
             onClick={() => sendCommand("reset")}
             disabled={isIdle}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3.5 text-base font-semibold text-white transition hover:bg-white/20 disabled:pointer-events-none disabled:opacity-40 sm:py-4 sm:text-lg"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/50 bg-white/10 px-5 py-3.5 text-base font-semibold text-white transition hover:bg-white/20 disabled:pointer-events-none disabled:opacity-40 sm:py-4 sm:text-lg"
           >
             <RotateCcw className="h-5 w-5" />
             Reset
@@ -224,12 +224,12 @@ export default function RoundTimer({ timer, compact = false }) {
 
         {/* Stepper cards: Duration, Rest, Rounds */}
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+          <div className="flex items-center justify-between rounded-xl border border-white/25 bg-white/10 px-3 py-2.5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/55">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
                 Round
               </p>
-              <p className="text-lg font-bold tabular-nums text-white sm:text-xl">
+              <p className="text-lg font-bold tabular-nums text-brand-gold sm:text-xl">
                 {formatDurationCompact(state.roundDurationSec)}
               </p>
             </div>
@@ -239,7 +239,7 @@ export default function RoundTimer({ timer, compact = false }) {
                 aria-label="Decrease round duration by 30 seconds"
                 onClick={() => adjustRound(-ROUND_STEP_SEC)}
                 disabled={state.roundDurationSec <= MIN_ROUND_SEC}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-white transition hover:bg-white/20 disabled:opacity-35"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25 disabled:opacity-35"
               >
                 <Minus className="h-4 w-4" />
               </button>
@@ -247,16 +247,16 @@ export default function RoundTimer({ timer, compact = false }) {
                 type="button"
                 aria-label="Increase round duration by 30 seconds"
                 onClick={() => adjustRound(ROUND_STEP_SEC)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+          <div className="flex items-center justify-between rounded-xl border border-white/25 bg-white/10 px-3 py-2.5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/55">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
                 Rest
               </p>
               <p className="text-lg font-bold tabular-nums text-white sm:text-xl">
@@ -269,7 +269,7 @@ export default function RoundTimer({ timer, compact = false }) {
                 aria-label="Decrease rest duration by 10 seconds"
                 onClick={() => adjustRest(-REST_STEP_SEC)}
                 disabled={state.restDurationSec <= MIN_REST_SEC}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-white transition hover:bg-white/20 disabled:opacity-35"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25 disabled:opacity-35"
               >
                 <Minus className="h-4 w-4" />
               </button>
@@ -277,23 +277,23 @@ export default function RoundTimer({ timer, compact = false }) {
                 type="button"
                 aria-label="Increase rest duration by 10 seconds"
                 onClick={() => adjustRest(REST_STEP_SEC)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+          <div className="flex items-center justify-between rounded-xl border border-white/25 bg-white/10 px-3 py-2.5">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/55">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80">
                 Rounds
               </p>
               <p className="flex items-center gap-1 text-lg font-bold tabular-nums text-white sm:text-xl">
                 {state.totalRounds === 0 ? (
                   <>
                     <InfinityIcon className="h-5 w-5" />
-                    <span className="text-sm font-medium text-white/75">
+                    <span className="text-sm font-medium text-white">
                       Unlimited
                     </span>
                   </>
@@ -308,7 +308,7 @@ export default function RoundTimer({ timer, compact = false }) {
                 aria-label="Decrease rounds"
                 onClick={() => adjustRounds(-1)}
                 disabled={state.totalRounds <= 0}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-white transition hover:bg-white/20 disabled:opacity-35"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25 disabled:opacity-35"
               >
                 <Minus className="h-4 w-4" />
               </button>
@@ -316,7 +316,7 @@ export default function RoundTimer({ timer, compact = false }) {
                 type="button"
                 aria-label="Increase rounds"
                 onClick={() => adjustRounds(1)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/40 bg-white/15 text-white transition hover:bg-white/25"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -335,14 +335,14 @@ export default function RoundTimer({ timer, compact = false }) {
                 onClick={() => sendCommand("apply_preset", { presetId: preset.id })}
                 className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition sm:text-sm ${
                   active
-                    ? "border-brand-gold bg-brand-gold text-zinc-950"
-                    : "border-white/15 bg-white/5 text-white/80 hover:bg-white/15"
+                    ? "border-brand-gold bg-brand-gold text-brand-blue"
+                    : "border-white/40 bg-white/10 text-white hover:bg-white/20"
                 }`}
               >
                 {preset.name}
                 <span
                   className={`ml-1.5 text-[11px] ${
-                    active ? "text-zinc-800" : "text-white/50"
+                    active ? "text-brand-blue/80" : "text-white/70"
                   }`}
                 >
                   {formatDurationCompact(preset.roundDurationSec)}/

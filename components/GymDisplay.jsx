@@ -139,18 +139,10 @@ export default function GymDisplay({ defaultMode = "split" }) {
     return mode === "check-in" ? "full" : "toast";
   })();
 
-  const isLightToolbar = mode === "check-in";
-
   return (
-    <div className="relative min-h-screen w-full overflow-x-clip">
+    <div className="relative min-h-screen w-full overflow-x-clip bg-brand-blue">
       {/* Floating top-right mode pill & controls */}
-      <div
-        className={`fixed top-3 right-3 z-40 flex flex-wrap items-center gap-1.5 rounded-full border p-1 shadow-lg backdrop-blur-md ${
-          isLightToolbar
-            ? "border-zinc-200 bg-white/90 text-zinc-800"
-            : "border-white/15 bg-zinc-900/85 text-zinc-100"
-        }`}
-      >
+      <div className="fixed top-3 right-3 z-40 flex flex-wrap items-center gap-1.5 rounded-full border border-white/30 bg-brand-blue/90 p-1 text-white shadow-lg backdrop-blur-md">
         <div className="flex items-center gap-0.5">
           {[
             { id: "split", label: "Split", Icon: Columns2 },
@@ -169,10 +161,8 @@ export default function GymDisplay({ defaultMode = "split" }) {
                 }
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                   active
-                    ? "bg-brand-blue text-white"
-                    : isLightToolbar
-                      ? "text-zinc-600 hover:bg-zinc-100"
-                      : "text-zinc-300 hover:bg-white/10"
+                    ? "bg-brand-gold text-brand-blue"
+                    : "text-white hover:bg-white/15"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -182,21 +172,12 @@ export default function GymDisplay({ defaultMode = "split" }) {
           })}
         </div>
 
-        <span
-          className={`mx-0.5 h-4 w-px ${
-            isLightToolbar ? "bg-zinc-200" : "bg-white/15"
-          }`}
-          aria-hidden="true"
-        />
+        <span className="mx-0.5 h-4 w-px bg-white/30" aria-hidden="true" />
 
         <Link
           href="/remote"
           title="Coach Phone Remote"
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition ${
-            isLightToolbar
-              ? "text-zinc-700 hover:bg-zinc-100"
-              : "text-zinc-200 hover:bg-white/10"
-          }`}
+          className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-white/15"
         >
           <Smartphone className="h-3.5 w-3.5" />
           <span className="hidden md:inline">Remote</span>
@@ -207,11 +188,7 @@ export default function GymDisplay({ defaultMode = "split" }) {
           onClick={toggleFullscreen}
           title={isFullscreen ? "Exit Fullscreen (F)" : "Fullscreen (F)"}
           aria-label="Toggle fullscreen"
-          className={`inline-flex items-center justify-center rounded-full p-1.5 transition ${
-            isLightToolbar
-              ? "text-zinc-700 hover:bg-zinc-100"
-              : "text-zinc-200 hover:bg-white/10"
-          }`}
+          className="inline-flex items-center justify-center rounded-full p-1.5 text-white transition hover:bg-white/15"
         >
           {isFullscreen ? (
             <Minimize2 className="h-4 w-4" />
@@ -225,11 +202,7 @@ export default function GymDisplay({ defaultMode = "split" }) {
           onClick={() => setSettingsOpen(true)}
           title="Settings & QR Remote"
           aria-label="Open settings"
-          className={`inline-flex items-center justify-center rounded-full p-1.5 transition ${
-            isLightToolbar
-              ? "text-zinc-700 hover:bg-zinc-100"
-              : "text-zinc-200 hover:bg-white/10"
-          }`}
+          className="inline-flex items-center justify-center rounded-full p-1.5 text-white transition hover:bg-white/15"
         >
           <Settings className="h-4 w-4" />
         </button>
@@ -241,7 +214,7 @@ export default function GymDisplay({ defaultMode = "split" }) {
           <div className="min-h-[60vh] lg:h-screen">
             <RoundTimer timer={timer} compact />
           </div>
-          <div className="border-t border-zinc-200 lg:h-screen lg:border-t-0 lg:border-l">
+          <div className="border-t border-brand-gold/80 lg:h-screen lg:border-t-0 lg:border-l">
             <CheckInPanel
               checkIn={checkIn}
               compact
@@ -270,7 +243,7 @@ export default function GymDisplay({ defaultMode = "split" }) {
       )}
 
       {mode === "check-in" && (
-        <div className="min-h-screen w-full bg-white">
+        <div className="min-h-screen w-full bg-brand-blue">
           <CheckInPanel
             checkIn={checkIn}
             popupVariant={resolvedPopupVariant}

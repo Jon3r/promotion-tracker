@@ -7,11 +7,11 @@
   --brand-blue-hover: #141288;
   --brand-gold: #ffbe00;
   --brand-gold-hover: #e6ab00;
-  --timer-bg: #09090b;
-  --timer-text: #fafafa;
-  --timer-clock: #ffffff;
-  --timer-rest: #22c55e;
-  --timer-ending: #ef4444;
+  --timer-bg: #1914a6;
+  --timer-text: #ffffff;
+  --timer-clock: #ffbe00;
+  --timer-rest: #ffffff;
+  --timer-ending: #ffffff;
 }
 
 @theme inline {
@@ -86,10 +86,10 @@ body {
   .check-in-name {
     margin: 0 0 0.75rem;
     padding: 0.65rem 0;
-    border-bottom: 1px solid #f4f4f5;
+    border-bottom: 1px solid rgb(255 255 255 / 0.18);
     font-size: clamp(1.35rem, 2.4vw, 2rem);
     font-weight: 600;
-    color: #18181b;
+    color: #ffffff;
     break-inside: avoid;
   }
 
@@ -128,9 +128,9 @@ body {
     max-width: min(92vw, 40rem);
     padding: 1.75rem 2rem;
     text-align: center;
-    color: white;
-    background: var(--brand-blue);
-    border: 4px solid var(--brand-gold);
+    color: var(--brand-blue);
+    background: var(--brand-gold);
+    border: 4px solid #ffffff;
     box-shadow: 0 24px 60px rgb(25 20 166 / 0.35);
     animation: check-in-popup-card 2.8s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
@@ -141,7 +141,7 @@ body {
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--brand-gold);
+    color: var(--brand-blue);
   }
 
   .check-in-popup__name {
@@ -189,9 +189,9 @@ body {
     max-width: min(92vw, 24rem);
     padding: 0.9rem 1.25rem;
     border-radius: 0.85rem;
-    border: 2px solid var(--brand-gold);
-    background: var(--brand-blue);
-    color: #ffffff;
+    border: 2px solid #ffffff;
+    background: var(--brand-gold);
+    color: var(--brand-blue);
     box-shadow: 0 18px 45px rgb(9 9 11 / 0.45);
     pointer-events: none;
     animation: check-in-toast-enter 2.8s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -203,7 +203,7 @@ body {
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--brand-gold);
+    color: var(--brand-blue);
   }
 
   .check-in-toast__name {

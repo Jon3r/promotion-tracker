@@ -52,7 +52,7 @@ export default function RemotePage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-4 bg-zinc-950 px-4 py-5 text-zinc-100">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-4 bg-brand-blue px-4 py-5 text-white">
       {/* Header */}
       <header className="flex items-center justify-between gap-2">
         <div>
@@ -72,7 +72,7 @@ export default function RemotePage() {
 
       {syncError && (
         <p
-          className="rounded-xl border border-red-500/40 bg-red-500/15 px-3 py-2 text-xs text-red-200"
+          className="rounded-xl border border-white/40 bg-white/15 px-3 py-2 text-xs text-brand-gold"
           role="alert"
         >
           {syncError}
@@ -80,8 +80,8 @@ export default function RemotePage() {
       )}
 
       {/* Live Mirrored Timer Card */}
-      <section className="rounded-2xl border border-white/10 bg-zinc-900/90 p-4 text-center shadow-lg">
-        <div className="flex items-center justify-between text-xs text-zinc-400">
+      <section className="rounded-2xl border border-white/25 bg-white/10 p-4 text-center shadow-lg">
+        <div className="flex items-center justify-between text-xs text-white/75">
           <span className="font-semibold uppercase tracking-wider text-brand-gold">
             {snapshot.phase === "idle"
               ? "Ready"
@@ -97,19 +97,17 @@ export default function RemotePage() {
         <p
           className={`mt-2 text-6xl font-bold tracking-tight tabular-nums ${
             snapshot.phase === "rest"
-              ? "text-emerald-400"
-              : snapshot.phase === "ready"
-                ? "text-amber-300"
-                : snapshot.isEndingSoon
-                  ? "text-red-400 timer-ending-soon"
-                  : "text-white"
+              ? "text-white"
+              : snapshot.isEndingSoon
+                ? "text-white timer-ending-soon"
+                : "text-brand-gold"
           }`}
         >
           {formatCountdown(snapshot.remainingMs)}
         </p>
 
         {snapshot.finishAtMs && (
-          <p className="mt-1 text-xs text-zinc-400" suppressHydrationWarning>
+          <p className="mt-1 text-xs text-white/75" suppressHydrationWarning>
             Finish at {formatClockTime(snapshot.finishAtMs, GYM_TIME_ZONE)}
           </p>
         )}
@@ -120,8 +118,8 @@ export default function RemotePage() {
             onClick={() => sendCommand("toggle")}
             className={`inline-flex items-center justify-center gap-2 rounded-xl py-4 text-lg font-bold transition active:scale-[0.98] ${
               isRunning
-                ? "bg-amber-400 text-zinc-950 hover:bg-amber-300"
-                : "bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
+                ? "bg-white text-brand-blue hover:bg-white/90"
+                : "bg-brand-gold text-brand-blue hover:bg-brand-gold-hover"
             }`}
           >
             {isRunning ? (
@@ -152,8 +150,8 @@ export default function RemotePage() {
 
       {/* Round / Rest / Rounds Steppers */}
       <section className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-white/10 bg-zinc-900/70 p-2.5 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+        <div className="rounded-xl border border-white/10 bg-white/10 p-2.5 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">
             Round
           </p>
           <p className="mt-0.5 text-lg font-bold tabular-nums text-white">
@@ -180,8 +178,8 @@ export default function RemotePage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-zinc-900/70 p-2.5 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+        <div className="rounded-xl border border-white/10 bg-white/10 p-2.5 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">
             Rest
           </p>
           <p className="mt-0.5 text-lg font-bold tabular-nums text-white">
@@ -208,8 +206,8 @@ export default function RemotePage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-zinc-900/70 p-2.5 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+        <div className="rounded-xl border border-white/10 bg-white/10 p-2.5 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">
             Rounds
           </p>
           <p className="mt-0.5 flex h-7 items-center justify-center text-lg font-bold tabular-nums text-white">
@@ -242,8 +240,8 @@ export default function RemotePage() {
       </section>
 
       {/* Presets */}
-      <section className="rounded-2xl border border-white/10 bg-zinc-900/70 p-3.5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+      <section className="rounded-2xl border border-white/10 bg-white/10 p-3.5">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-white/70">
           Presets
         </h2>
         <div className="mt-2.5 grid grid-cols-2 gap-2">
@@ -258,14 +256,14 @@ export default function RemotePage() {
                 }
                 className={`rounded-xl border px-3 py-2.5 text-left transition ${
                   active
-                    ? "border-brand-gold bg-brand-gold text-zinc-950"
+                    ? "border-brand-gold bg-brand-gold text-brand-blue"
                     : "border-white/10 bg-white/5 text-white active:bg-white/15"
                 }`}
               >
                 <p className="text-sm font-bold">{preset.name}</p>
                 <p
                   className={`text-[11px] ${
-                    active ? "text-zinc-800" : "text-zinc-400"
+                    active ? "text-brand-blue/80" : "text-white/70"
                   }`}
                 >
                   {formatDurationCompact(preset.roundDurationSec)} /{" "}
@@ -279,8 +277,8 @@ export default function RemotePage() {
       </section>
 
       {/* TV Screen Mode Switcher */}
-      <section className="rounded-2xl border border-white/10 bg-zinc-900/70 p-3.5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+      <section className="rounded-2xl border border-white/10 bg-white/10 p-3.5">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-white/70">
           TV Screen Mode
         </h2>
         <div className="mt-2.5 grid grid-cols-3 gap-2">
@@ -299,8 +297,8 @@ export default function RemotePage() {
                 }
                 className={`flex flex-col items-center gap-1 rounded-xl border py-3 text-xs font-semibold transition ${
                   active
-                    ? "border-brand-blue bg-brand-blue text-white"
-                    : "border-white/10 bg-white/5 text-zinc-300 active:bg-white/15"
+                    ? "border-brand-gold bg-brand-gold text-brand-blue"
+                    : "border-white/25 bg-white/10 text-white active:bg-white/20"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -312,9 +310,9 @@ export default function RemotePage() {
       </section>
 
       {/* Live ClubWorx Class & Check-In Count */}
-      <section className="rounded-2xl border border-white/10 bg-zinc-900/70 p-3.5">
+      <section className="rounded-2xl border border-white/10 bg-white/10 p-3.5">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-white/70">
             ClubWorx Class
           </h2>
           <span className="text-xs font-semibold text-brand-gold">
@@ -323,9 +321,9 @@ export default function RemotePage() {
         </div>
 
         {checkIn.scheduleLoading ? (
-          <p className="mt-2 text-sm text-zinc-400">Loading schedule…</p>
+          <p className="mt-2 text-sm text-white/70">Loading schedule…</p>
         ) : checkIn.scheduleError ? (
-          <p className="mt-2 text-xs text-red-300">{checkIn.scheduleError}</p>
+          <p className="mt-2 text-xs text-brand-gold">{checkIn.scheduleError}</p>
         ) : checkIn.currentClasses?.length ? (
           <div className="mt-2 space-y-2">
             {checkIn.currentClasses.map((cls) => {
@@ -344,18 +342,18 @@ export default function RemotePage() {
                     <p className="truncate text-base font-bold text-white">
                       {cls.title}
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-white/70">
                       {checkIn.formatTimeLabel(cls.startsAt)}
                       {cls.endsAt
                         ? ` – ${checkIn.formatTimeLabel(cls.endsAt)}`
                         : ""}
                     </p>
                   </div>
-                  <div className="shrink-0 rounded-xl border border-brand-blue/50 bg-brand-blue/30 px-3 py-2 text-center">
-                    <p className="text-xl font-bold tabular-nums text-white">
+                  <div className="shrink-0 rounded-xl border border-white bg-brand-gold px-3 py-2 text-center text-brand-blue">
+                    <p className="text-xl font-bold tabular-nums">
                       {count}
                     </p>
-                    <p className="text-[10px] uppercase tracking-wider text-zinc-300">
+                    <p className="text-[10px] uppercase tracking-wider">
                       Checked in
                     </p>
                   </div>
@@ -364,7 +362,7 @@ export default function RemotePage() {
             })}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-zinc-300">
+          <p className="mt-2 text-sm text-white/80">
             {checkIn.nextClass
               ? `Next: ${checkIn.nextClass.title} at ${checkIn.formatTimeLabel(checkIn.nextClass.startsAt)}`
               : "No active class right now"}

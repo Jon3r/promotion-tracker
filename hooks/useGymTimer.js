@@ -13,15 +13,15 @@ import {
   unlockAudio,
 } from "@/lib/audio/timerAudio";
 
-const PREFS_STORAGE_KEY = "bjj-gym-timer-prefs-v1";
+const PREFS_STORAGE_KEY = "bjj-gym-timer-prefs-v2";
 const POLL_INTERVAL_MS = 1500;
 
 export const DEFAULT_TIMER_COLORS = {
-  bg: "#09090b",
-  text: "#fafafa",
-  clock: "#ffffff",
-  rest: "#22c55e",
-  ending: "#ef4444",
+  bg: "#1914a6",
+  text: "#ffffff",
+  clock: "#ffbe00",
+  rest: "#ffffff",
+  ending: "#ffffff",
 };
 
 const DEFAULT_PREFS = {
