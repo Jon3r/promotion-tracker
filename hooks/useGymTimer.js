@@ -264,10 +264,11 @@ export function useGymTimer(options = {}) {
 
     if (snapshot.status === "running") {
       if (snapshot.phase === "ready") {
-        if (
-          prev.phase !== "ready" ||
-          (snapshot.remainingSec !== prev.remainingSec &&
-            snapshot.remainingSec > 0)
+        if (prev.phase !== "ready") {
+          playTimerCue("ready", { announce: true });
+        } else if (
+          snapshot.remainingSec !== prev.remainingSec &&
+          snapshot.remainingSec > 0
         ) {
           playTimerCue("ready");
         }
