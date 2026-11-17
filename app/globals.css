@@ -153,6 +153,11 @@ body {
     word-break: break-word;
   }
 
+  .check-in-columns--single {
+    columns: 1;
+    column-gap: 1.25rem;
+  }
+
   .check-in-columns--multi {
     columns: 1;
     column-gap: 1.25rem;

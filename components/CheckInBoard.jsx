@@ -15,13 +15,15 @@ const POPUP_MS = 2800;
  * Remount with a new `key={classId}` from the parent when the class changes
  * so known check-ins reset without a sync setState-in-effect.
  *
- * @param {{ attendees: CheckInPerson[], compact?: boolean, popupVariant?: "full" | "toast", hideList?: boolean, onNewCheckIn?: (person: CheckInPerson) => void }} props
+ * @param {{ attendees: CheckInPerson[], compact?: boolean, popupVariant?: "full" | "toast", hideList?: boolean, singleColumn?: boolean, toastStackIndex?: number, onNewCheckIn?: (person: CheckInPerson) => void }} props
  */
 export default function CheckInBoard({
   attendees,
   compact = false,
   popupVariant = "full",
   hideList = false,
+  singleColumn = false,
+  toastStackIndex = 0,
   onNewCheckIn,
 }) {
   const [animatingKeys, setAnimatingKeys] = useState(() => new Set());
@@ -89,7 +91,11 @@ export default function CheckInBoard({
 
   if (!attendees?.length && !popup) return null;
 
-  const listClass = compact ? "check-in-columns--multi" : "check-in-columns";
+  const listClass = singleColumn
+    ? "check-in-columns--single"
+    : compact
+      ? "check-in-columns--multi"
+      : "check-in-columns";
   const itemBaseClass = compact
     ? "check-in-name check-in-name--compact break-inside-avoid"
     : "check-in-name break-inside-avoid";
@@ -126,6 +132,11 @@ export default function CheckInBoard({
       {popup && popupVariant === "toast" && (
         <div
           className="check-in-toast"
+          style={
+            toastStackIndex > 0
+              ? { bottom: `calc(1.25rem + ${toastStackIndex * 5.75}rem)` }
+              : undefined
+          }
           role="status"
           aria-live="polite"
           aria-atomic="true"

@@ -326,27 +326,42 @@ export default function RemotePage() {
           <p className="mt-2 text-sm text-zinc-400">Loading schedule…</p>
         ) : checkIn.scheduleError ? (
           <p className="mt-2 text-xs text-red-300">{checkIn.scheduleError}</p>
-        ) : checkIn.currentClass ? (
-          <div className="mt-2 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-base font-bold text-white">
-                {checkIn.currentClass.title}
-              </p>
-              <p className="text-xs text-zinc-400">
-                {checkIn.formatTimeLabel(checkIn.currentClass.startsAt)}
-                {checkIn.currentClass.endsAt
-                  ? ` – ${checkIn.formatTimeLabel(checkIn.currentClass.endsAt)}`
-                  : ""}
-              </p>
-            </div>
-            <div className="shrink-0 rounded-xl bg-brand-blue/30 px-3 py-2 text-center border border-brand-blue/50">
-              <p className="text-xl font-bold tabular-nums text-white">
-                {checkIn.attendeesCount}
-              </p>
-              <p className="text-[10px] uppercase tracking-wider text-zinc-300">
-                Checked in
-              </p>
-            </div>
+        ) : checkIn.currentClasses?.length ? (
+          <div className="mt-2 space-y-2">
+            {checkIn.currentClasses.map((cls) => {
+              const board = checkIn.classBoards?.find(
+                (entry) =>
+                  entry.classInfo.id === cls.id &&
+                  entry.classInfo.startsAt === cls.startsAt
+              );
+              const count = board?.attendees.length ?? 0;
+              return (
+                <div
+                  key={`${cls.id}-${cls.startsAt || ""}`}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-bold text-white">
+                      {cls.title}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      {checkIn.formatTimeLabel(cls.startsAt)}
+                      {cls.endsAt
+                        ? ` – ${checkIn.formatTimeLabel(cls.endsAt)}`
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="shrink-0 rounded-xl border border-brand-blue/50 bg-brand-blue/30 px-3 py-2 text-center">
+                    <p className="text-xl font-bold tabular-nums text-white">
+                      {count}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-wider text-zinc-300">
+                      Checked in
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <p className="mt-2 text-sm text-zinc-300">

@@ -255,16 +255,17 @@ export default function GymDisplay({ defaultMode = "split" }) {
       {mode === "timer" && (
         <div className="min-h-screen w-full">
           <RoundTimer timer={timer} />
-          {/* Silent check-in listener so corner toast + chime fire during rounds */}
-          {checkIn.currentClass && (
+          {/* Silent check-in listeners so corner toasts + chime fire during rounds */}
+          {(checkIn.classBoards || []).map((board, index) => (
             <CheckInBoard
-              key={checkIn.currentClass.id}
-              attendees={checkIn.attendees}
+              key={`${board.classInfo.id}-${board.classInfo.startsAt || ""}`}
+              attendees={board.attendees}
               popupVariant="toast"
               hideList
+              toastStackIndex={index}
               onNewCheckIn={handleNewCheckIn}
             />
-          )}
+          ))}
         </div>
       )}
 

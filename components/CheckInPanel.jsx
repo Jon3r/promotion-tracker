@@ -21,11 +21,11 @@ export default function CheckInPanel({
 }) {
   const {
     currentClass,
+    classBoards = [],
     nextClass,
     status,
     statusLabel,
     attendees,
-    attendeesClassId,
     attendeesCount,
     scheduleLoading,
     scheduleError,
@@ -34,6 +34,20 @@ export default function CheckInPanel({
     lastAttendeesAt,
     formatTimeLabel,
   } = checkIn;
+
+  const boards =
+    classBoards.length > 0
+      ? classBoards
+      : currentClass
+        ? [
+            {
+              classInfo: currentClass,
+              attendees,
+              status,
+            },
+          ]
+        : [];
+  const sideBySide = boards.length > 1;
 
   return (
     <div
@@ -66,54 +80,117 @@ export default function CheckInPanel({
         <PageHeader title="Check in" centered largeTitle />
       )}
 
-      <section
-        className={`min-w-0 border-b border-zinc-200 ${
-          compact ? "mb-4 pb-4" : "mb-6 pb-6"
-        }`}
-      >
-        {scheduleLoading && (
-          <p className="text-zinc-500">Loading today’s schedule…</p>
-        )}
-        {scheduleError && (
-          <p className="text-red-600" role="alert">
-            {scheduleError}
-          </p>
-        )}
-        {!scheduleLoading && !scheduleError && currentClass && (
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue sm:text-sm">
-              {statusLabel}
+      {scheduleLoading && (
+        <p className="text-zinc-500">Loading today’s schedule…</p>
+      )}
+      {scheduleError && (
+        <p className="text-red-600" role="alert">
+          {scheduleError}
+        </p>
+      )}
+
+      {!scheduleLoading && !scheduleError && sideBySide && (
+        <>
+          {attendeesError && (
+            <p className="mb-4 text-red-600" role="alert">
+              {attendeesError}
             </p>
-            <h2
-              className={`mt-1 font-bold tracking-tight text-zinc-900 ${
-                compact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-5xl"
-              }`}
-            >
-              {currentClass.title}
-            </h2>
-            <p
-              className={`mt-1.5 text-zinc-600 ${
-                compact ? "text-sm sm:text-base" : "text-lg sm:text-xl"
-              }`}
-            >
-              {formatTimeLabel(currentClass.startsAt)}
-              {currentClass.endsAt
-                ? ` – ${formatTimeLabel(currentClass.endsAt)}`
-                : ""}
-              {currentClass.organisation
-                ? ` · ${currentClass.organisation}`
-                : ""}
-            </p>
-            <p
-              className={`mt-2 font-semibold text-brand-blue ${
-                compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
-              }`}
-            >
-              {attendeesCount} checked in
-            </p>
+          )}
+          <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-2">
+            {boards.map((board, index) => (
+              <ClassColumn
+                key={`${board.classInfo.id}-${board.classInfo.startsAt || ""}`}
+                board={board}
+                compact={compact}
+                popupVariant={popupVariant}
+                attendeesLoading={attendeesLoading}
+                formatTimeLabel={formatTimeLabel}
+                onNewCheckIn={onNewCheckIn}
+                toastStackIndex={index}
+                divided={index > 0}
+              />
+            ))}
           </div>
-        )}
-        {!scheduleLoading && !scheduleError && !currentClass && (
+        </>
+      )}
+
+      {!scheduleLoading && !scheduleError && !sideBySide && currentClass && (
+        <>
+          <section
+            className={`min-w-0 border-b border-zinc-200 ${
+              compact ? "mb-4 pb-4" : "mb-6 pb-6"
+            }`}
+          >
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue sm:text-sm">
+                {statusLabel}
+              </p>
+              <h2
+                className={`mt-1 font-bold tracking-tight text-zinc-900 ${
+                  compact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-5xl"
+                }`}
+              >
+                {currentClass.title}
+              </h2>
+              <p
+                className={`mt-1.5 text-zinc-600 ${
+                  compact ? "text-sm sm:text-base" : "text-lg sm:text-xl"
+                }`}
+              >
+                {formatTimeLabel(currentClass.startsAt)}
+                {currentClass.endsAt
+                  ? ` – ${formatTimeLabel(currentClass.endsAt)}`
+                  : ""}
+                {currentClass.organisation
+                  ? ` · ${currentClass.organisation}`
+                  : ""}
+              </p>
+              <p
+                className={`mt-2 font-semibold text-brand-blue ${
+                  compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+                }`}
+              >
+                {attendeesCount} checked in
+              </p>
+            </div>
+          </section>
+
+          <section className="min-w-0 flex-1">
+            {attendeesError && (
+              <p className="mb-4 text-red-600" role="alert">
+                {attendeesError}
+              </p>
+            )}
+            {!attendeesError && attendees.length === 0 && (
+              <p
+                className={`text-zinc-500 ${
+                  compact ? "text-base sm:text-lg" : "text-xl sm:text-2xl"
+                }`}
+              >
+                {attendeesLoading
+                  ? "Loading check-ins…"
+                  : "Waiting for the first check-in…"}
+              </p>
+            )}
+            {attendees.length > 0 && (
+              <CheckInBoard
+                key={currentClass.id}
+                attendees={attendees}
+                compact={compact}
+                popupVariant={popupVariant}
+                onNewCheckIn={onNewCheckIn}
+              />
+            )}
+          </section>
+        </>
+      )}
+
+      {!scheduleLoading && !scheduleError && !currentClass && (
+        <section
+          className={`min-w-0 border-b border-zinc-200 ${
+            compact ? "mb-4 pb-4" : "mb-6 pb-6"
+          }`}
+        >
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 sm:text-sm">
               {statusLabel}
@@ -135,45 +212,102 @@ export default function CheckInPanel({
               </p>
             )}
           </div>
-        )}
-      </section>
-
-      {currentClass && (
-        <section className="min-w-0 flex-1">
-          {attendeesError && (
-            <p className="mb-4 text-red-600" role="alert">
-              {attendeesError}
-            </p>
-          )}
-          {!attendeesError && attendees.length === 0 && (
-            <p
-              className={`text-zinc-500 ${
-                compact ? "text-base sm:text-lg" : "text-xl sm:text-2xl"
-              }`}
-            >
-              {attendeesLoading
-                ? "Loading check-ins…"
-                : "Waiting for the first check-in…"}
-            </p>
-          )}
-          {attendees.length > 0 && (
-            <CheckInBoard
-              key={currentClass.id}
-              attendees={attendees}
-              compact={compact}
-              popupVariant={popupVariant}
-              onNewCheckIn={onNewCheckIn}
-            />
-          )}
-          {lastAttendeesAt && attendeesClassId === currentClass.id && (
-            <p
-              className={`text-xs text-zinc-400 ${compact ? "mt-4" : "mt-8 text-sm"}`}
-            >
-              Last updated {lastAttendeesAt.toLocaleTimeString()}
-            </p>
-          )}
         </section>
       )}
+
+      {lastAttendeesAt && boards.length > 0 && (
+        <p
+          className={`text-xs text-zinc-400 ${compact ? "mt-4" : "mt-8 text-sm"}`}
+        >
+          Last updated {lastAttendeesAt.toLocaleTimeString()}
+        </p>
+      )}
     </div>
+  );
+}
+
+function ClassColumn({
+  board,
+  compact,
+  popupVariant,
+  attendeesLoading,
+  formatTimeLabel,
+  onNewCheckIn,
+  toastStackIndex,
+  divided,
+}) {
+  const { classInfo, attendees: names, status: columnStatus } = board;
+  const label = columnStatus === "upcoming" ? "Starting soon" : "Live now";
+
+  return (
+    <section
+      className={`flex min-h-0 min-w-0 flex-col ${
+        divided
+          ? compact
+            ? "mt-5 border-t border-zinc-200 pt-5 md:mt-0 md:border-t-0 md:border-l md:pt-0 md:pl-5"
+            : "mt-6 border-t border-zinc-200 pt-6 md:mt-0 md:border-t-0 md:border-l md:pt-0 md:pl-8"
+          : compact
+            ? "md:pr-5"
+            : "md:pr-8"
+      }`}
+    >
+      <div
+        className={`min-w-0 border-b border-zinc-200 ${
+          compact ? "mb-4 pb-4" : "mb-6 pb-6"
+        }`}
+      >
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue sm:text-sm">
+          {label}
+        </p>
+        <h2
+          className={`mt-1 font-bold tracking-tight text-zinc-900 ${
+            compact ? "text-xl sm:text-2xl" : "text-3xl sm:text-4xl"
+          }`}
+        >
+          {classInfo.title}
+        </h2>
+        <p
+          className={`mt-1.5 text-zinc-600 ${
+            compact ? "text-sm" : "text-base sm:text-lg"
+          }`}
+        >
+          {formatTimeLabel(classInfo.startsAt)}
+          {classInfo.endsAt ? ` – ${formatTimeLabel(classInfo.endsAt)}` : ""}
+          {classInfo.organisation ? ` · ${classInfo.organisation}` : ""}
+        </p>
+        <p
+          className={`mt-2 font-semibold text-brand-blue ${
+            compact ? "text-lg sm:text-xl" : "text-2xl sm:text-3xl"
+          }`}
+        >
+          {names.length} checked in
+        </p>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        {names.length === 0 && (
+          <p
+            className={`text-zinc-500 ${
+              compact ? "text-base" : "text-lg sm:text-xl"
+            }`}
+          >
+            {attendeesLoading
+              ? "Loading check-ins…"
+              : "Waiting for the first check-in…"}
+          </p>
+        )}
+        {names.length > 0 && (
+          <CheckInBoard
+            key={`${classInfo.id}-${classInfo.startsAt || ""}`}
+            attendees={names}
+            compact={compact}
+            singleColumn
+            popupVariant={popupVariant}
+            toastStackIndex={toastStackIndex}
+            onNewCheckIn={onNewCheckIn}
+          />
+        )}
+      </div>
+    </section>
   );
 }

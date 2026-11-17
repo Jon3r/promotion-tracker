@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   dayKeyInTimeZone,
   filterClassesForDay,
-  pickDisplayedClass,
+  pickDisplayedClasses,
 } from "@/lib/clubworx/classes";
 import {
   fetchClubWorxClassAttendees,
@@ -29,18 +29,30 @@ export function useClubWorxCheckIn() {
   const [scheduleError, setScheduleError] = useState("");
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [now, setNow] = useState(() => new Date());
-  const [attendees, setAttendees] = useState([]);
-  const [attendeesClassId, setAttendeesClassId] = useState(null);
+  const [attendeesById, setAttendeesById] = useState({});
+  const [loadedClassKey, setLoadedClassKey] = useState("");
   const [attendeesError, setAttendeesError] = useState("");
   const [attendeesLoading, setAttendeesLoading] = useState(false);
   const [lastAttendeesAt, setLastAttendeesAt] = useState(null);
 
   const day = dayKeyInTimeZone(now);
-  const selection = pickDisplayedClass(classes, now);
+  const selection = pickDisplayedClasses(classes, now);
+  const currentClasses = selection.classes || [];
   const currentClass = selection.class;
   const nextClass = selection.nextClass;
-  const shownAttendees =
-    currentClass && attendeesClassId === currentClass.id ? attendees : [];
+  const activeKey = currentClasses
+    .map((entry) => `${entry.id}::${entry.startsAt || ""}`)
+    .join("|");
+  const classBoards = currentClasses.map((entry) => ({
+    classInfo: entry,
+    attendees:
+      loadedClassKey === activeKey ? attendeesById[entry.id] || [] : [],
+    status:
+      entry.startsAt && new Date(entry.startsAt).getTime() > now.getTime()
+        ? "upcoming"
+        : "live",
+  }));
+  const shownAttendees = classBoards[0]?.attendees || [];
 
   const loadSchedule = useCallback(async () => {
     const gymDay = dayKeyInTimeZone(new Date());
@@ -88,26 +100,43 @@ export function useClubWorxCheckIn() {
   }, []);
 
   useEffect(() => {
-    const classId = currentClass?.id;
-    const classDay = currentClass?.dayKey || day;
-    if (!classId) return undefined;
+    const keys = new Set(activeKey.split("|").filter(Boolean));
+    const targets = classes
+      .filter((entry) => keys.has(`${entry.id}::${entry.startsAt || ""}`))
+      .map((entry) => ({
+        id: entry.id,
+        day: entry.dayKey || day,
+      }));
+    if (!targets.length) return undefined;
 
     let cancelled = false;
 
     async function loadAttendees() {
       if (!cancelled) setAttendeesLoading(true);
-      const result = await fetchClubWorxClassAttendees(classId, classDay, {
-        state: "attended",
-      });
+      const results = await Promise.all(
+        targets.map(async (target) => {
+          const result = await fetchClubWorxClassAttendees(target.id, target.day, {
+            state: "attended",
+          });
+          return { id: target.id, result };
+        })
+      );
       if (cancelled) return;
-      if (!result.ok) {
-        setAttendeesError(result.error || "Could not load check-ins");
-        setAttendeesLoading(false);
-        return;
-      }
-      setAttendeesError("");
-      setAttendees(result.attendees || []);
-      setAttendeesClassId(classId);
+
+      const failed = results.find((entry) => !entry.result.ok);
+      setAttendeesById((prev) => {
+        const nextById = {};
+        for (const { id, result } of results) {
+          nextById[id] = result.ok
+            ? result.attendees || []
+            : prev[id] || [];
+        }
+        return nextById;
+      });
+      setLoadedClassKey(activeKey);
+      setAttendeesError(
+        failed ? failed.result.error || "Could not load check-ins" : ""
+      );
       setLastAttendeesAt(new Date());
       setAttendeesLoading(false);
     }
@@ -118,7 +147,7 @@ export function useClubWorxCheckIn() {
       cancelled = true;
       clearInterval(id);
     };
-  }, [currentClass?.id, currentClass?.dayKey, day]);
+  }, [activeKey, day, classes]);
 
   const statusLabel =
     selection.status === "live"
@@ -132,12 +161,17 @@ export function useClubWorxCheckIn() {
   return {
     classes,
     currentClass,
+    currentClasses,
+    classBoards,
     nextClass,
     status: selection.status,
     statusLabel,
     attendees: shownAttendees,
-    attendeesClassId,
-    attendeesCount: shownAttendees.length,
+    attendeesClassId: currentClass?.id || null,
+    attendeesCount: classBoards.reduce(
+      (total, board) => total + board.attendees.length,
+      0
+    ),
     scheduleLoading,
     scheduleError,
     attendeesLoading,
