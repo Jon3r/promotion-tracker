@@ -10,6 +10,22 @@ const libreFranklin = Libre_Franklin({
 export const metadata = {
   title: "BJJ Grading Report",
   description: "Visual grading report for coaches — Adults and Kids by belt",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    noarchive: true,
+    nosnippet: true,
+    noimageindex: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+      "max-snippet": -1,
+      "max-image-preview": "none",
+      "max-video-preview": -1,
+    },
+  },
   icons: {
     icon: "/pja-logo.png",
     apple: "/pja-logo.png",
