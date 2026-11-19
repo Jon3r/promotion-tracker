@@ -360,9 +360,11 @@ export function useGymTimer(options = {}) {
         });
         const data = await res.json();
         if (!res.ok || !data?.state) {
+          const error = data?.error || "Could not update timer";
+          setSyncError(error);
           return {
             ok: false,
-            error: data?.error || "Could not update timer",
+            error,
           };
         }
         applyServerPayload(data);
@@ -378,7 +380,9 @@ export function useGymTimer(options = {}) {
         }
         return { ok: true, state: data.state };
       } catch {
-        return { ok: false, error: "Network error sending timer command" };
+        const error = "Network error sending timer command";
+        setSyncError(error);
+        return { ok: false, error };
       }
     },
     [applyServerPayload, updatePrefs]
