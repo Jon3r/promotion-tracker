@@ -117,7 +117,11 @@ The app includes a TV-scale BJJ round timer, live ClubWorx class check-in board,
 - `/gym` — Unified **Split** TV display (Round Timer + Live Check-In side by side), with top-right mode pill (`Split` | `Timer` | `Check-In`), keyboard shortcuts (`Space` start/pause, `R` reset, `F` fullscreen, `1`/`2`/`3` modes), audio cues, and QR code settings drawer.
 - `/timer` — Full-screen **Round Timer** (still plays corner toast + check-in chime when students arrive).
 - `/check-in` — Full-screen **Check-In** display with mode switcher.
-- `/remote` — Mobile-friendly **Coach Mat Remote** synced via `/api/timer` (persisted in Postgres `gym_timer_state` when `POSTGRES_URL` is configured, with in-memory fallback locally).
+- `/remote` — Mobile-friendly **Coach Mat Remote** synced via `/api/timer` (persisted in Postgres `gym_timer_state` when `POSTGRES_URL` is configured, with in-memory fallback locally). The remote reconnects on phone wake / network restore, polls faster while a round is running, and shows a Connected / Reconnecting status pill.
+
+### Timer audio overrides
+
+Cues default to synthesized Web Audio tones. To use your own bells or voice lines, drop MP3 files into `public/sounds/` (see that folder’s README). Supported names: `ready.mp3`, `start.mp3`, `soon.mp3`, `finish.mp3`, `checkin.mp3`, plus optional `announce-ready.mp3`, `announce-start.mp3`, `announce-soon.mp3`. Missing files fall back to the synth.
 
 ### Raspberry Pi Kiosk Setup
 

@@ -36,7 +36,7 @@ export async function GET(request) {
         sendEvent("state", payload);
       });
 
-      const heartbeatId = setInterval(sendHeartbeat, 15_000);
+      const heartbeatId = setInterval(sendHeartbeat, 10_000);
 
       cleanup = () => {
         if (closed) return;

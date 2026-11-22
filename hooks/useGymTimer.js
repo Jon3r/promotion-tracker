@@ -14,7 +14,10 @@ import {
 } from "@/lib/audio/timerAudio";
 
 const PREFS_STORAGE_KEY = "bjj-gym-timer-prefs-v2";
-const POLL_INTERVAL_MS = 1500;
+const POLL_IDLE_MS = 1500;
+const POLL_ACTIVE_MS = 500;
+const SSE_BACKOFF_MIN_MS = 1000;
+const SSE_BACKOFF_MAX_MS = 8000;
 
 export const DEFAULT_TIMER_COLORS = {
   bg: "#1914a6",
@@ -68,7 +71,7 @@ function saveLocalPrefs(prefs) {
 }
 
 /**
- * Shared synchronized timer hook backed by /api/timer/stream + 1.5s polling.
+ * Shared synchronized timer hook backed by /api/timer/stream + adaptive polling.
  * @param {{ enableAudio?: boolean }} [options]
  */
 export function useGymTimer(options = {}) {
@@ -84,10 +87,14 @@ export function useGymTimer(options = {}) {
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [syncError, setSyncError] = useState("");
   const [storageMode, setStorageMode] = useState("memory");
+  const [connectionStatus, setConnectionStatus] = useState("connecting");
+  const [lastSyncedAtMs, setLastSyncedAtMs] = useState(0);
 
   const lastMutationSeqRef = useRef(0);
   const seededAudioRef = useRef(false);
   const prevAudioSnapRef = useRef(null);
+  const serverStatusRef = useRef("idle");
+  const syncErrorRef = useRef("");
 
   // Load persisted local preferences asynchronously after mount
   useEffect(() => {
@@ -116,6 +123,14 @@ export function useGymTimer(options = {}) {
     }
   }, [prefs]);
 
+  useEffect(() => {
+    serverStatusRef.current = serverState.status;
+  }, [serverState.status]);
+
+  useEffect(() => {
+    syncErrorRef.current = syncError;
+  }, [syncError]);
+
   const applyServerPayload = useCallback((payload) => {
     if (!payload?.state) return;
     const normalized = normalizeTimerState(payload.state);
@@ -138,12 +153,17 @@ export function useGymTimer(options = {}) {
     });
     setHasServerSync(true);
     setSyncError("");
+    setConnectionStatus("connected");
+    setLastSyncedAtMs(Date.now());
   }, []);
 
-  // Initial fetch + SSE stream + 1500ms polling fallback (reliable across Vercel lambdas)
+  // Initial fetch + SSE stream with reconnect + adaptive polling
   useEffect(() => {
     let cancelled = false;
     let eventSource = null;
+    let pollId = null;
+    let reconnectTimeoutId = null;
+    let sseBackoffMs = SSE_BACKOFF_MIN_MS;
 
     async function fetchTimer() {
       const requestSeq = lastMutationSeqRef.current;
@@ -153,6 +173,7 @@ export function useGymTimer(options = {}) {
         if (cancelled) return;
         if (!res.ok || !data?.state) {
           setSyncError(data?.error || "Could not sync timer");
+          setConnectionStatus("reconnecting");
           return;
         }
         // Skip if a newer local mutation started while this GET was in flight
@@ -161,37 +182,121 @@ export function useGymTimer(options = {}) {
       } catch {
         if (!cancelled) {
           setSyncError("Connection lost — retrying…");
+          setConnectionStatus("reconnecting");
         }
       }
     }
 
-    fetchTimer();
+    function closeEventSource() {
+      if (eventSource) {
+        eventSource.onerror = null;
+        eventSource.close();
+        eventSource = null;
+      }
+    }
 
-    if (typeof EventSource !== "undefined") {
+    function scheduleSseReconnect() {
+      if (cancelled || reconnectTimeoutId) return;
+      setConnectionStatus("reconnecting");
+      reconnectTimeoutId = setTimeout(() => {
+        reconnectTimeoutId = null;
+        openEventSource();
+      }, sseBackoffMs);
+      sseBackoffMs = Math.min(SSE_BACKOFF_MAX_MS, sseBackoffMs * 2);
+    }
+
+    function openEventSource() {
+      if (cancelled || typeof EventSource === "undefined") return;
+      closeEventSource();
       try {
         eventSource = new EventSource("/api/timer/stream");
         eventSource.addEventListener("state", (event) => {
           if (cancelled) return;
           try {
             const payload = JSON.parse(event.data);
+            sseBackoffMs = SSE_BACKOFF_MIN_MS;
             applyServerPayload(payload);
           } catch {
             // Ignore malformed SSE payloads
           }
         });
+        eventSource.onerror = () => {
+          if (cancelled) return;
+          closeEventSource();
+          scheduleSseReconnect();
+        };
       } catch {
-        // Fallback polling continues cleanly
+        scheduleSseReconnect();
       }
     }
 
-    const pollId = setInterval(fetchTimer, POLL_INTERVAL_MS);
+    function clearPoll() {
+      if (pollId) {
+        clearInterval(pollId);
+        pollId = null;
+      }
+    }
+
+    function startPoll(intervalMs) {
+      clearPoll();
+      pollId = setInterval(fetchTimer, intervalMs);
+    }
+
+    function resyncNow() {
+      if (cancelled) return;
+      fetchTimer();
+      openEventSource();
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        resyncNow();
+      }
+    }
+
+    function onPageShow() {
+      resyncNow();
+    }
+
+    function onOnline() {
+      resyncNow();
+    }
+
+    fetchTimer();
+    openEventSource();
+
+    let lastPollMs =
+      serverStatusRef.current === "running" || syncErrorRef.current
+        ? POLL_ACTIVE_MS
+        : POLL_IDLE_MS;
+    startPoll(lastPollMs);
+
+    // Adapt poll rate when timer starts/stops or sync errors appear
+    const pollAdaptId = setInterval(() => {
+      if (cancelled) return;
+      const desired =
+        serverStatusRef.current === "running" || syncErrorRef.current
+          ? POLL_ACTIVE_MS
+          : POLL_IDLE_MS;
+      if (desired !== lastPollMs) {
+        lastPollMs = desired;
+        startPoll(desired);
+      }
+    }, 400);
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("online", onOnline);
 
     return () => {
       cancelled = true;
-      clearInterval(pollId);
-      if (eventSource) {
-        eventSource.close();
-      }
+      clearPoll();
+      clearInterval(pollAdaptId);
+      if (reconnectTimeoutId) clearTimeout(reconnectTimeoutId);
+      closeEventSource();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("online", onOnline);
     };
   }, [applyServerPayload]);
 
@@ -352,21 +457,25 @@ export function useGymTimer(options = {}) {
   const sendCommand = useCallback(
     async (action, payload = {}) => {
       lastMutationSeqRef.current += 1;
-      try {
+      const body = JSON.stringify({ action, ...payload });
+
+      const postOnce = async () => {
         const res = await fetch("/api/timer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action, ...payload }),
+          body,
         });
         const data = await res.json();
         if (!res.ok || !data?.state) {
-          const error = data?.error || "Could not update timer";
-          setSyncError(error);
           return {
             ok: false,
-            error,
+            error: data?.error || "Could not update timer",
           };
         }
+        return { ok: true, data };
+      };
+
+      const applySuccess = (data) => {
         applyServerPayload(data);
         if (action === "update_settings" || action === "apply_preset") {
           updatePrefs((prev) => ({
@@ -379,10 +488,29 @@ export function useGymTimer(options = {}) {
           }));
         }
         return { ok: true, state: data.state };
+      };
+
+      try {
+        const first = await postOnce();
+        if (first.ok) return applySuccess(first.data);
+        setSyncError(first.error);
+        setConnectionStatus("reconnecting");
+        return { ok: false, error: first.error };
       } catch {
-        const error = "Network error sending timer command";
-        setSyncError(error);
-        return { ok: false, error };
+        // One automatic retry on network failure
+        try {
+          await new Promise((r) => setTimeout(r, 350));
+          const second = await postOnce();
+          if (second.ok) return applySuccess(second.data);
+          setSyncError(second.error);
+          setConnectionStatus("reconnecting");
+          return { ok: false, error: second.error };
+        } catch {
+          const error = "Network error sending timer command";
+          setSyncError(error);
+          setConnectionStatus("reconnecting");
+          return { ok: false, error };
+        }
       }
     },
     [applyServerPayload, updatePrefs]
@@ -395,6 +523,8 @@ export function useGymTimer(options = {}) {
     hasServerSync,
     storageMode,
     syncError,
+    connectionStatus,
+    lastSyncedAtMs,
     prefs,
     updatePrefs,
     resetColors,
