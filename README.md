@@ -121,7 +121,7 @@ The app includes a TV-scale BJJ round timer, live ClubWorx class check-in board,
 
 ### Timer audio overrides
 
-Cues default to synthesized Web Audio tones. To use your own bells or voice lines, drop MP3 files into `public/sounds/` (see that folder’s README). Supported names: `ready.mp3`, `start.mp3`, `soon.mp3`, `finish.mp3`, `checkin.mp3`, plus optional `announce-ready.mp3`, `announce-start.mp3`, `announce-soon.mp3`. Missing files fall back to the synth.
+Cues default to synthesized Web Audio tones. Drop MP3s into `public/sounds/` (see that folder’s README). Round voices must be named `round1.mp3` … `round9.mp3`; `round.mp3` is used as the start bell when `start.mp3` is missing. Also supported: `ready.mp3`, `start.mp3`, `soon.mp3`, `finish.mp3`, `checkin.mp3`, and optional `announce-*.mp3`. Missing files fall back to the synth.
 
 ### Raspberry Pi Kiosk Setup
 
